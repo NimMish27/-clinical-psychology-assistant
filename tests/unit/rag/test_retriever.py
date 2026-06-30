@@ -31,7 +31,10 @@ from rag.retriever import (
     RetrievedChunk,
     RetrieverError,
     SearchFailedError,
+    _build_bm25_filter,
     _build_where_filter,
+    _chunks_to_dicts,
+    _dicts_to_chunks,
     _to_retrieved_chunks,
     get_retriever,
 )
@@ -52,6 +55,14 @@ def _make_settings(n_results: int = 5, threshold: float = 0.35, top_k: int = 10)
     mock = MagicMock()
     mock.rag.top_k = top_k
     mock.rag.similarity_threshold = threshold
+    mock.rag.bm25_enabled = False
+    mock.rag.rerank_enabled = False
+    mock.rag.bm25_weight = 0.3
+    mock.rag.bm25_k1 = 1.5
+    mock.rag.bm25_b = 0.75
+    mock.rag.rerank_top_k = 4
+    mock.rag.cross_encoder_model = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    mock.rag.hybrid_top_k_ratio = 2.0
     return mock
 
 
@@ -288,6 +299,132 @@ class TestBuildWhereFilter:
     def test_single_condition_no_and_wrapper(self):
         result = _build_where_filter(where=None, source_filter="doc.pdf", page_range=None)
         assert "$and" not in result   # single condition, no wrapper needed
+
+    def test_metadata_filter_exact(self):
+        result = _build_where_filter(
+            where=None, source_filter=None, page_range=None,
+            metadata_filter={"topic": "depression"},
+        )
+        assert result == {"topic": {"$eq": "depression"}}
+
+    def test_metadata_filter_with_in(self):
+        result = _build_where_filter(
+            where=None, source_filter=None, page_range=None,
+            metadata_filter={"therapy": {"$in": ["CBT", "ACT"]}},
+        )
+        assert result == {"therapy": {"$in": ["CBT", "ACT"]}}
+
+    def test_metadata_filter_with_eq(self):
+        result = _build_where_filter(
+            where=None, source_filter=None, page_range=None,
+            metadata_filter={"disorder": {"$eq": "MDD"}},
+        )
+        assert result == {"disorder": {"$eq": "MDD"}}
+
+    def test_metadata_filter_combined_with_source(self):
+        result = _build_where_filter(
+            where=None, source_filter="DSM5.pdf", page_range=None,
+            metadata_filter={"topic": "anxiety"},
+        )
+        assert "$and" in result
+        conds = result["$and"]
+        assert {"source": "DSM5.pdf"} in conds
+        assert {"topic": {"$eq": "anxiety"}} in conds
+
+    def test_metadata_filter_multiple_keys(self):
+        result = _build_where_filter(
+            where=None, source_filter=None, page_range=None,
+            metadata_filter={"disorder": "GAD", "therapy": {"$in": ["CBT", "ACT"]}},
+        )
+        assert "$and" in result
+        conds = result["$and"]
+        assert {"disorder": {"$eq": "GAD"}} in conds
+        assert {"therapy": {"$in": ["CBT", "ACT"]}} in conds
+
+
+# ---- _build_bm25_filter -----------------------------------------------------------
+
+class TestBuildBM25Filter:
+    def test_no_filters_returns_none(self):
+        assert _build_bm25_filter(metadata_filter=None, source_filter=None) is None
+
+    def test_source_filter_only(self):
+        result = _build_bm25_filter(metadata_filter=None, source_filter="DSM5.pdf")
+        assert result == {"source": "DSM5.pdf"}
+
+    def test_metadata_filter_exact(self):
+        result = _build_bm25_filter(metadata_filter={"topic": "depression"})
+        assert result == {"topic": "depression"}
+
+    def test_metadata_filter_with_in(self):
+        result = _build_bm25_filter(
+            metadata_filter={"therapy": {"$in": ["CBT", "ACT"]}},
+        )
+        assert result == {"therapy": {"$in": ["CBT", "ACT"]}}
+
+    def test_metadata_filter_with_eq(self):
+        result = _build_bm25_filter(
+            metadata_filter={"disorder": {"$eq": "MDD"}},
+        )
+        assert result == {"disorder": "MDD"}
+
+    def test_combined(self):
+        result = _build_bm25_filter(
+            metadata_filter={"topic": "depression", "therapy": {"$in": ["CBT"]}},
+            source_filter="DSM5.pdf",
+        )
+        assert result["source"] == "DSM5.pdf"
+        assert result["topic"] == "depression"
+
+
+# ---- _chunks_to_dicts / _dicts_to_chunks ------------------------------------------
+
+class TestChunkConversion:
+    def make_chunk(self, rank=1, score=0.9, source="DSM5.pdf", page=12):
+        return RetrievedChunk(
+            text="clinical text",
+            source=source,
+            page=page,
+            score=score,
+            chunk_id=f"DSM5__p{page:04d}__c{rank:04d}",
+            rank=rank,
+            metadata={"source": source, "page": page},
+        )
+
+    def test_chunks_to_dicts(self):
+        chunks = [self.make_chunk(rank=1, score=0.9), self.make_chunk(rank=2, score=0.8)]
+        dicts = _chunks_to_dicts(chunks)
+        assert len(dicts) == 2
+        assert dicts[0]["chunk_id"] == chunks[0].chunk_id
+        assert dicts[0]["score"] == 0.9
+        assert dicts[1]["rank"] == 2
+
+    def test_chunks_to_dicts_empty(self):
+        assert _chunks_to_dicts([]) == []
+
+    def test_dicts_to_chunks(self):
+        dicts = [
+            {"chunk_id": "id1", "text": "text1", "source": "doc.pdf", "page": 1,
+             "score": 0.9, "rank": 1, "metadata": {"source": "doc.pdf"}},
+        ]
+        chunks = _dicts_to_chunks(dicts)
+        assert len(chunks) == 1
+        assert chunks[0].chunk_id == "id1"
+        assert chunks[0].rank == 1
+
+    def test_dicts_rerank_assigns(self):
+        dicts = [
+            {"chunk_id": "id1", "text": "text1", "source": "doc.pdf", "page": 1,
+             "score": 0.5, "rank": 5, "metadata": {}},
+            {"chunk_id": "id2", "text": "text2", "source": "doc.pdf", "page": 2,
+             "score": 0.3, "rank": 6, "metadata": {}},
+        ]
+        chunks = _dicts_to_chunks(dicts)
+        assert chunks[0].rank == 1
+        assert chunks[1].rank == 2
+
+    def test_dicts_to_chunks_empty(self):
+        assert _dicts_to_chunks([]) == []
 
 
 # ---- _to_retrieved_chunks -------------------------------------------------------

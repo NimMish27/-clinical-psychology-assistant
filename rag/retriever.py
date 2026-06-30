@@ -64,6 +64,13 @@ from app_logging.logger import get_logger
 
 _log = get_logger(__name__)
 
+# Conditional imports for hybrid retrieval — gracefully degrade if missing
+try:
+    from rag.retrieval.fusion import reciprocal_rank_fusion
+except ImportError:
+    reciprocal_rank_fusion = None  # type: ignore[assignment]
+    _log.warning("retriever.fusion_unavailable")
+
 
 # ---- Custom exceptions ----------------------------------------------------------
 
@@ -272,6 +279,11 @@ class Retriever:
         self._similarity_threshold = similarity_threshold if similarity_threshold is not None else cfg.similarity_threshold
         self._raise_on_empty      = raise_on_empty
         self._max_query_length    = max_query_length
+        self._bm25_weight         = cfg.bm25_weight
+        self._bm25_enabled        = cfg.bm25_enabled
+        self._rerank_enabled      = cfg.rerank_enabled
+        self._rerank_top_k        = cfg.rerank_top_k
+        self._hybrid_top_k_ratio  = cfg.hybrid_top_k_ratio
 
         if not 0.0 <= self._similarity_threshold <= 1.0:
             raise ValueError(
@@ -298,16 +310,27 @@ class Retriever:
         page_range: tuple[int, int] | None = None,
         where: dict[str, Any] | None = None,
         similarity_threshold: float | None = None,
+        metadata_filter: dict[str, Any] | None = None,
+        use_hybrid: bool | None = None,
+        use_rerank: bool | None = None,
+        bm25_weight: float | None = None,
     ) -> RetrievalResult:
         """
         Retrieve the most relevant clinical document chunks for a query.
 
-        Flow:
+        Flow (default, dense-only):
             1. Validate and preprocess query text.
             2. Embed query with BGE query prefix (``is_query=True``).
             3. Run cosine similarity search in ChromaDB.
             4. Filter by similarity threshold.
             5. Return typed RetrievalResult.
+
+        When ``use_hybrid=True`` (dense + BM25 + fusion):
+            1-2. Same as above.
+            3.   Run dense vector search AND BM25 keyword search.
+            4.   Fuse results with Reciprocal Rank Fusion.
+            5.   Optionally rerank with cross-encoder if ``use_rerank=True``.
+            6.   Return typed RetrievalResult.
 
         Args:
             query:               Natural language query from the clinician.
@@ -317,8 +340,20 @@ class Retriever:
             page_range:          Restrict search to pages in (start, end) inclusive.
                                  Example: ``(50, 100)``
             where:               Raw ChromaDB metadata filter. Overrides
-                                 source_filter and page_range if provided.
+                                 source_filter, page_range, and metadata_filter
+                                 if provided.
             similarity_threshold: Override instance-level threshold for this call.
+            metadata_filter:     Structured metadata filter dict. Each key is a
+                                 metadata field name, value is the exact value
+                                 to match. Supports ``$in`` for list matching.
+                                 Example: ``{"topic": "depression", "therapy": {"$in": ["CBT", "ACT"]}}``
+            use_hybrid:          Enable hybrid dense + BM25 retrieval. Defaults
+                                 to instance-level ``bm25_enabled`` setting.
+            use_rerank:          Enable cross-encoder reranking after retrieval.
+                                 Defaults to instance-level ``rerank_enabled``.
+            bm25_weight:         Weight for BM25 scores in hybrid fusion
+                                 (0.0 = dense only, 1.0 = BM25 only).
+                                 Defaults to instance-level ``bm25_weight``.
 
         Returns:
             RetrievalResult containing matched chunks and timing metadata.
@@ -339,6 +374,30 @@ class Retriever:
             if similarity_threshold is not None
             else self._similarity_threshold
         )
+        effective_hybrid = (
+            use_hybrid if use_hybrid is not None else self._bm25_enabled
+        )
+        effective_rerank = (
+            use_rerank if use_rerank is not None else self._rerank_enabled
+        )
+        effective_bm25_w = (
+            bm25_weight if bm25_weight is not None else self._bm25_weight
+        )
+
+        # ---- Route to hybrid or dense-only pipeline ----------------------------
+        if effective_hybrid or effective_rerank:
+            return self._retrieve_hybrid(
+                query=clean_query,
+                n_results=effective_n,
+                threshold=effective_threshold,
+                source_filter=source_filter,
+                page_range=page_range,
+                where=where,
+                metadata_filter=metadata_filter,
+                use_rerank=effective_rerank,
+                bm25_weight=effective_bm25_w,
+                t_total=t_total,
+            )
 
         _log.info(
             "retriever.retrieve_start",
@@ -354,6 +413,7 @@ class Retriever:
             where=where,
             source_filter=source_filter,
             page_range=page_range,
+            metadata_filter=metadata_filter,
         )
 
         # ---- 3. Embed query -----------------------------------------------------
@@ -569,6 +629,139 @@ class Retriever:
                 cause=exc,
             ) from exc
 
+    # ---- Hybrid retrieval pipeline ---------------------------------------------
+
+    def _retrieve_hybrid(
+        self,
+        *,
+        query: str,
+        n_results: int,
+        threshold: float,
+        source_filter: str | None,
+        page_range: tuple[int, int] | None,
+        where: dict[str, Any] | None,
+        metadata_filter: dict[str, Any] | None,
+        use_rerank: bool,
+        bm25_weight: float,
+        t_total: float,
+    ) -> RetrievalResult:
+        """Run dense + BM25 hybrid retrieval with optional cross-encoder rerank."""
+
+        chroma_filter = _build_where_filter(
+            where=where,
+            source_filter=source_filter,
+            page_range=page_range,
+            metadata_filter=metadata_filter,
+        )
+        bm25_filter = _build_bm25_filter(metadata_filter=metadata_filter, source_filter=source_filter)
+
+        # ---- Dense retrieval ---------------------------------------------------
+        t_embed = time.perf_counter()
+        query_vector = self._embed_query(query)
+        embedding_ms = (time.perf_counter() - t_embed) * 1000
+
+        candidate_n = int(n_results * self._hybrid_top_k_ratio)
+        t_search = time.perf_counter()
+        dense_raw = self._search(query_vector, candidate_n, chroma_filter)
+        dense_ms = (time.perf_counter() - t_search) * 1000
+
+        dense_candidates = _to_retrieved_chunks(dense_raw, threshold)
+        _log.info(
+            "retriever.dense_complete",
+            candidates=len(dense_candidates),
+            top_score=dense_candidates[0].score if dense_candidates else None,
+            elapsed_ms=round(dense_ms, 2),
+        )
+
+        # ---- BM25 retrieval ----------------------------------------------------
+        t_sparse = time.perf_counter()
+        sparse_candidates: list[dict[str, Any]] = []
+        try:
+            from rag.retrieval.bm25 import get_bm25_retriever
+            bm25 = get_bm25_retriever()
+            sparse_raw = bm25.search(
+                query,
+                n_results=candidate_n,
+                metadata_filter=bm25_filter,
+            )
+            sparse_candidates = sparse_raw
+        except Exception as exc:
+            _log.warning("retriever.bm25_failed", error=str(exc))
+        sparse_ms = (time.perf_counter() - t_sparse) * 1000
+        _log.info(
+            "retriever.bm25_complete",
+            candidates=len(sparse_candidates),
+            elapsed_ms=round(sparse_ms, 2),
+        )
+
+        # ---- Fusion (RRF) ------------------------------------------------------
+        dense_weight = 1.0 - bm25_weight
+        if sparse_candidates and reciprocal_rank_fusion is not None:
+            fused = reciprocal_rank_fusion(
+                dense_results=_chunks_to_dicts(dense_candidates),
+                sparse_results=sparse_candidates,
+                top_k=n_results,
+                dense_weight=dense_weight,
+                sparse_weight=bm25_weight,
+            )
+        elif sparse_candidates:
+            fused = sparse_candidates[:n_results]
+        else:
+            fused = _chunks_to_dicts(dense_candidates)[:n_results]
+
+        total_candidates = len(dense_raw) + len(sparse_candidates)
+
+        # ---- Cross-encoder rerank ----------------------------------------------
+        if use_rerank and fused:
+            try:
+                from rag.retrieval.reranker import get_reranker
+                reranker = get_reranker()
+                fused = reranker.rerank(query, fused, top_k=n_results)
+                _log.info("retriever.rerank_complete", candidates=len(fused))
+            except Exception as exc:
+                _log.warning("retriever.rerank_failed", error=str(exc))
+
+        # ---- Convert to RetrievedChunk -----------------------------------------
+        chunks = _dicts_to_chunks(fused)
+
+        # ---- Handle empty results ----------------------------------------------
+        if not chunks and self._raise_on_empty:
+            raise NoResultsError(
+                f"No chunks found for query (threshold={threshold:.2f}, "
+                f"candidates={total_candidates}). "
+                "Consider lowering RAG_SIMILARITY_THRESHOLD in .env."
+            )
+
+        elapsed_ms = (time.perf_counter() - t_total) * 1000
+        total_ms = embedding_ms + dense_ms + sparse_ms
+
+        result = RetrievalResult(
+            query=query,
+            chunks=chunks,
+            total_candidates=total_candidates,
+            threshold_used=threshold,
+            n_results_requested=n_results,
+            elapsed_ms=round(elapsed_ms, 2),
+            embedding_ms=round(embedding_ms, 2),
+            search_ms=round(dense_ms, 2),
+        )
+
+        _log.info(
+            "retriever.hybrid_complete",
+            query_length=len(query),
+            total_candidates=total_candidates,
+            dense=len(dense_candidates),
+            bm25=len(sparse_candidates),
+            returned=len(chunks),
+            top_score=chunks[0].score if chunks else None,
+            elapsed_ms=round(elapsed_ms, 2),
+            embedding_ms=round(embedding_ms, 2),
+            dense_ms=round(dense_ms, 2),
+            sparse_ms=round(sparse_ms, 2),
+        )
+
+        return result
+
     # ---- Configuration introspection --------------------------------------------
 
     @property
@@ -602,19 +795,26 @@ def _build_where_filter(
     where: dict[str, Any] | None,
     source_filter: str | None,
     page_range: tuple[int, int] | None,
+    metadata_filter: dict[str, Any] | None = None,
 ) -> dict[str, Any] | None:
     """
     Build a ChromaDB ``where`` filter from convenience parameters.
 
-    Priority: explicit ``where`` dict > source_filter + page_range.
+    Priority: explicit ``where`` dict > source_filter + page_range + metadata_filter.
     If ``where`` is provided, it is used as-is (caller owns the ChromaDB
-    filter syntax). Otherwise, source_filter and page_range are combined
-    with a ``$and`` operator when both are present.
+    filter syntax). Otherwise, source_filter, page_range, and metadata_filter
+    are combined with a ``$and`` operator when multiple are present.
+
+    The ``metadata_filter`` dict supports:
+        - Exact match: ``{"topic": "depression"}`` → ``{"topic": {"$eq": "depression"}}``
+        - ``$in``: ``{"therapy": {"$in": ["CBT", "ACT"]}}``
+        - ``$eq``: ``{"disorder": {"$eq": "MDD"}}``
 
     Args:
-        where:         Raw ChromaDB filter dict. Overrides all others.
-        source_filter: Filename to restrict search to.
-        page_range:    (start, end) tuple for inclusive page filtering.
+        where:           Raw ChromaDB filter dict. Overrides all others.
+        source_filter:   Filename to restrict search to.
+        page_range:      (start, end) tuple for inclusive page filtering.
+        metadata_filter: Structured metadata filter (see above).
 
     Returns:
         ChromaDB-compatible filter dict, or None if no filtering needed.
@@ -636,11 +836,76 @@ def _build_where_filter(
         conditions.append({"page": {"$gte": start}})
         conditions.append({"page": {"$lte": end}})
 
+    if metadata_filter:
+        for key, condition in metadata_filter.items():
+            if isinstance(condition, dict) and "$in" in condition:
+                conditions.append({key: {"$in": condition["$in"]}})
+            elif isinstance(condition, dict) and "$eq" in condition:
+                conditions.append({key: {"$eq": condition["$eq"]}})
+            else:
+                conditions.append({key: {"$eq": condition}})
+
     if not conditions:
         return None
     if len(conditions) == 1:
         return conditions[0]
     return {"$and": conditions}
+
+
+def _build_bm25_filter(
+    metadata_filter: dict[str, Any] | None = None,
+    source_filter: str | None = None,
+) -> dict[str, Any] | None:
+    """Build a metadata filter dict for BM25 post-filtering.
+
+    BM25 doesn't support ChromaDB's ``$and``/``$eq`` syntax — it does its
+    own matching.  This function converts the shared parameters into a
+    simple key-value dict that ``BM25Retriever._match_metadata`` understands.
+    """
+    filt: dict[str, Any] = {}
+    if metadata_filter:
+        for key, condition in metadata_filter.items():
+            if isinstance(condition, dict) and "$in" in condition:
+                filt[key] = {"$in": condition["$in"]}
+            elif isinstance(condition, dict) and "$eq" in condition:
+                filt[key] = condition["$eq"]
+            else:
+                filt[key] = condition
+    if source_filter:
+        filt["source"] = source_filter
+    return filt or None
+
+
+def _chunks_to_dicts(chunks: list[RetrievedChunk]) -> list[dict[str, Any]]:
+    """Convert RetrievedChunk objects to dicts for hybrid fusion."""
+    return [
+        {
+            "chunk_id": c.chunk_id,
+            "text": c.text,
+            "source": c.source,
+            "page": c.page,
+            "score": c.score,
+            "rank": c.rank,
+            "metadata": c.metadata,
+        }
+        for c in chunks
+    ]
+
+
+def _dicts_to_chunks(dicts: list[dict[str, Any]]) -> list[RetrievedChunk]:
+    """Convert dicts (from fusion/rerank) back to RetrievedChunk."""
+    chunks: list[RetrievedChunk] = []
+    for rank, d in enumerate(dicts, start=1):
+        chunks.append(RetrievedChunk(
+            text=str(d.get("text", "")),
+            source=str(d.get("source", "unknown")),
+            page=int(d.get("page", 0)),
+            score=float(d.get("score", 0.0)),
+            chunk_id=str(d.get("chunk_id", "")),
+            rank=rank,
+            metadata=dict(d.get("metadata", {})),
+        ))
+    return chunks
 
 
 def _to_retrieved_chunks(

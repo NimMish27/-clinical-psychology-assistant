@@ -116,6 +116,20 @@ class RAGSettings(BaseSettings):
     similarity_threshold: float = Field(
         0.35, alias="RAG_SIMILARITY_THRESHOLD", ge=0.0, le=1.0
     )
+    bm25_enabled: bool = Field(False, alias="RAG_BM25_ENABLED")
+    bm25_weight: float = Field(0.3, alias="RAG_BM25_WEIGHT", ge=0.0, le=1.0)
+    bm25_k1: float = Field(1.5, alias="RAG_BM25_K1", ge=0.0)
+    bm25_b: float = Field(0.75, alias="RAG_BM25_B", ge=0.0, le=1.0)
+    rerank_enabled: bool = Field(False, alias="RAG_RERANK_ENABLED")
+    cross_encoder_model: str = Field(
+        "cross-encoder/ms-marco-MiniLM-L-6-v2",
+        alias="RAG_CROSS_ENCODER_MODEL",
+    )
+    hybrid_top_k_ratio: float = Field(
+        2.0, alias="RAG_HYBRID_TOP_K_RATIO", ge=1.0, le=5.0,
+        description="Multiplier for top_k when fetching candidates for hybrid fusion. "
+                    "e.g. 2.0 means fetch 2x top_k from each system before fusion.",
+    )
 
     @field_validator("rerank_top_k")
     @classmethod
