@@ -12,7 +12,21 @@ from clinical.case_understanding import (
     Severity as CaseSeverity,
     TreatmentHistory,
 )
+from clinical.evidence_synthesis import (
+    Agreement as EvidenceAgreement,
+    EvidenceSynthesisResult,
+    EvidenceSynthesizer,
+    Finding,
+    Implication as EvidenceImplication,
+    Theme,
+    Uncertainty as EvidenceUncertainty,
+)
 from clinical.formulation import ClinicalFormulationResult as FormulationResult, ClinicalFormulator
+from clinical.missing_info import (
+    MissingInfoDetector,
+    MissingInfoItem,
+    MissingInfoResult,
+)
 from clinical.models import (
     CaseUnderstanding,
     ClinicalFeatures,
@@ -28,8 +42,29 @@ from clinical.models import (
     RetrievalQuery,
 )
 from clinical.pipeline import ClinicalPipeline
+from clinical.response_generation import (
+    ClinicalResponseResult,
+    ResponseGenerator,
+)
+from clinical.therapeutic_planning import (
+    ACTStrategy,
+    BehaviouralActivationSuggestion,
+    CBTStrategy,
+    DBTStrategy,
+    HomeworkIdea,
+    InterventionDirection,
+    PsychEducationSuggestion,
+    SelfCompassionStrategy,
+    TherapeuticFocus,
+    TherapeuticPlanResult,
+    TherapeuticPlanner,
+    TreatmentGoal,
+)
 
 __all__ = [
+    "ACTStrategy",
+    "BehaviouralActivationSuggestion",
+    "CBTStrategy",
     "CaseUnderstanding",
     "CaseUnderstandingExtractor",
     "CaseUnderstandingResult",
@@ -40,11 +75,32 @@ __all__ = [
     "ClinicalInputType",
     "ClinicalPipeline",
     "ClinicalResponse",
+    "ClinicalResponseResult",
+    "DBTStrategy",
+    "EvidenceAgreement",
     "EvidenceSynthesis",
+    "EvidenceSynthesisResult",
+    "EvidenceSynthesizer",
+    "EvidenceUncertainty",
+    "EvidenceImplication",
+    "Finding",
     "Formulation",
     "FormulationResult",
+    "HomeworkIdea",
+    "InterventionDirection",
+    "MissingInfoDetector",
+    "MissingInfoItem",
+    "MissingInfoResult",
     "PipelineError",
     "PipelineResult",
     "PipelineStage",
+    "PsychEducationSuggestion",
+    "ResponseGenerator",
     "RetrievalQuery",
+    "SelfCompassionStrategy",
+    "Theme",
+    "TherapeuticFocus",
+    "TherapeuticPlanResult",
+    "TherapeuticPlanner",
+    "TreatmentGoal",
 ]
