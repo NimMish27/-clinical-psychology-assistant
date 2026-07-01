@@ -93,6 +93,6 @@ async def clinical_analyze(
         features=result.features.model_dump(),
         queries=[q.model_dump() for q in result.queries],
         evidence=result.evidence.model_dump(),
-        response=result.response.model_dump(),
+        formulation=result.formulation.model_dump(),
         elapsed_ms=result.elapsed_ms,
     )

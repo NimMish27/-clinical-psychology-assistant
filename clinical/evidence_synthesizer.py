@@ -20,17 +20,20 @@ You are a clinical evidence synthesis specialist. Review the retrieved \
 evidence chunks alongside the clinical features extracted from a case.
 
 Produce:
-1. A concise integrated synthesis of what the evidence says about this case.
-2. Specific evidence points that support the clinical picture.
-3. Evidence that contradicts or complicates the picture (empty list if none).
-4. A confidence score (0.0-1.0) — how well-supported is this synthesis?
+1. Key findings from the evidence.
+2. Common themes across the retrieved literature.
+3. Areas of agreement in the evidence.
+4. Areas of uncertainty or conflicting evidence.
+5. Practical implications for clinicians.
+6. A concise evidence summary (DO NOT copy the raw chunks, just summarize).
 
 Focus on diagnostic criteria, treatment efficacy, risk assessment, and \
 clinical guidelines. Note any gaps in the evidence base.
 
 Respond EXACTLY in this JSON format:
-{"synthesis": "...", "supporting_evidence": ["..."], \
-"contradicting_evidence": ["..."], "confidence": 0.0}
+{"key_findings": ["..."], "common_themes": ["..."], \
+"areas_of_agreement": ["..."], "areas_of_uncertainty": ["..."], \
+"practical_implications": ["..."], "evidence_summary": "..."}
 """
 
 
@@ -47,10 +50,12 @@ class EvidenceSynthesizer:
         try:
             if not chunks:
                 return EvidenceSynthesis(
-                    synthesis="No relevant clinical evidence was found in the knowledge base.",
-                    supporting_evidence=[],
-                    contradicting_evidence=[],
-                    confidence=0.0,
+                    key_findings=[],
+                    common_themes=[],
+                    areas_of_agreement=[],
+                    areas_of_uncertainty=["No relevant clinical evidence was found in the knowledge base."],
+                    practical_implications=[],
+                    evidence_summary="No evidence available.",
                 )
 
             raw = await self._llm.generate(
@@ -58,6 +63,7 @@ class EvidenceSynthesizer:
                 system_prompt=_SYSTEM_PROMPT,
             )
             data = self._parse(raw)
+            data.setdefault("evidence_summary", data.pop("synthesis", "No evidence summary available."))
             return EvidenceSynthesis(**data)
         except Exception as exc:
             raise PipelineError(

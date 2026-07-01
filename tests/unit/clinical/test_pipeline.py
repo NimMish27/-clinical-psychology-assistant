@@ -100,19 +100,27 @@ class TestRetrievalQuery:
 class TestEvidenceSynthesis:
     def test_valid(self):
         e = EvidenceSynthesis(
-            synthesis="Evidence supports MDD diagnosis.",
-            supporting_evidence=["Criterion A met"],
-            contradicting_evidence=[],
-            confidence=0.8,
+            key_findings=["MDD diagnosis supported by evidence"],
+            common_themes=["Depression"],
+            areas_of_agreement=["DSM-5 criteria met"],
+            areas_of_uncertainty=[],
+            practical_implications=["Consider CBT"],
+            evidence_summary="Evidence supports MDD diagnosis.",
         )
-        assert e.confidence == 0.8
+        assert e.evidence_summary
+        assert e.key_findings == ["MDD diagnosis supported by evidence"]
 
-    def test_confidence_bounds(self):
-        from pydantic import ValidationError
-        with pytest.raises(ValidationError):
-            EvidenceSynthesis(
-                synthesis="x", confidence=1.5,
-            )
+    def test_all_fields_default_to_empty_list(self):
+        e = EvidenceSynthesis(
+            key_findings=[],
+            common_themes=[],
+            areas_of_agreement=[],
+            areas_of_uncertainty=[],
+            practical_implications=[],
+            evidence_summary="No evidence available.",
+        )
+        assert e.key_findings == []
+        assert e.evidence_summary == "No evidence available."
 
 
 class TestClinicalResponse:
@@ -213,7 +221,7 @@ class TestClinicalPipeline:
         assert result.input_type == ClinicalInputType.CASE_STUDY
         assert len(result.features.symptoms) == 2
         assert len(result.queries) == 2
-        assert "MDD" in result.response.analysis
+        assert "MDD" in result.formulation.case_summary
         assert result.elapsed_ms > 0
         assert mock_llm.generate.call_count == 5
 
@@ -274,8 +282,8 @@ class TestClinicalPipeline:
             ClinicalInput(raw_text="Patient reports chronic pain.")
         )
 
-        assert len(result.evidence.supporting_evidence) > 0
-        assert result.response.analysis
+        assert "Pain" in result.evidence.evidence_summary
+        assert result.formulation.case_summary
 
     @pytest.mark.asyncio
     async def test_retrieval_failure_does_not_crash_pipeline(self, mock_llm):
@@ -307,8 +315,8 @@ class TestClinicalPipeline:
             ClinicalInput(raw_text="Test input")
         )
 
-        assert result.response is not None
-        assert result.evidence.confidence == 0.0
+        assert result.formulation is not None
+        assert "No evidence" in result.evidence.evidence_summary
 
     @pytest.mark.asyncio
     async def test_input_type_override_bypassed_llm(self, mock_retriever, mock_llm):
@@ -363,8 +371,9 @@ class TestClinicalPipeline:
 class TestClinicalAPI:
     def _mock_pipeline(self):
         from clinical.models import (
-            CaseUnderstanding, ClinicalFeatures, ClinicalInputType,
-            ClinicalResponse, EvidenceSynthesis, PipelineResult, RetrievalQuery,
+            CaseUnderstanding, ClinicalFeatures, ClinicalFormulation,
+            ClinicalInputType, EvidenceSynthesis, Formulation,
+            PipelineResult, RetrievalQuery,
         )
         return PipelineResult(
             input_type=ClinicalInputType.SINGLE_STATEMENT,
@@ -381,15 +390,25 @@ class TestClinicalAPI:
                 rationale="test",
             )],
             evidence=EvidenceSynthesis(
-                synthesis="Test synthesis",
-                supporting_evidence=[],
-                contradicting_evidence=[],
-                confidence=0.5,
+                key_findings=[],
+                common_themes=[],
+                areas_of_agreement=[],
+                areas_of_uncertainty=[],
+                practical_implications=[],
+                evidence_summary="Test evidence",
             ),
-            response=ClinicalResponse(
-                analysis="Test analysis",
-                evidence_summary="Test",
-                confidence=0.5,
+            formulation=ClinicalFormulation(
+                case_summary="Test case summary with enough characters.",
+                possible_formulations=[
+                    Formulation(
+                        explanation="Test explanation with enough characters to pass validation.",
+                        supporting_symptoms=["anxiety"],
+                        confidence_level="Moderate",
+                    ),
+                ],
+                supporting_evidence=[],
+                alternative_explanations=[],
+                missing_assessment_information=[],
             ),
             elapsed_ms=10.0,
         )
@@ -408,7 +427,7 @@ class TestClinicalAPI:
         assert resp.status_code == 200
         data = resp.json()
         assert data["input_type"] == "single_statement"
-        assert data["response"]["analysis"] == "Test analysis"
+        assert "case_summary" in data["formulation"]
 
     def test_422_empty_text(self, client):
         test_client, app = client

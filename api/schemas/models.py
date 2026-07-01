@@ -276,7 +276,7 @@ class ClinicalAnalyzeResponse(BaseModel):
     features: dict[str, Any]
     queries: list[dict[str, Any]]
     evidence: dict[str, Any]
-    response: dict[str, Any]
+    formulation: dict[str, Any]
     elapsed_ms: float
 
     model_config = {"frozen": True}

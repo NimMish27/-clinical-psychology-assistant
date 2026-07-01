@@ -4,6 +4,7 @@ import time
 
 from clinical.evidence_synthesizer import EvidenceSynthesizer
 from clinical.feature_extractor import FeatureExtractor
+from clinical.formulation_generator import FormulationGenerator
 from clinical.input_processor import InputProcessor
 from clinical.llm import LLMService
 from clinical.models import (
@@ -13,7 +14,6 @@ from clinical.models import (
     PipelineStage,
 )
 from clinical.query_generator import QueryGenerator
-from clinical.response_generator import ResponseGenerator
 from rag.retriever import Retriever
 from app_logging.logger import get_logger
 
@@ -25,7 +25,7 @@ class ClinicalPipeline:
 
     Stages:
         Input → CaseUnderstanding → ClinicalFeatures → RetrievalQueries
-        → RetrievedChunks → EvidenceSynthesis → ClinicalResponse
+        → RetrievedChunks → EvidenceSynthesis → ClinicalFormulation
     """
 
     def __init__(
@@ -39,7 +39,7 @@ class ClinicalPipeline:
         self._feature_extractor = FeatureExtractor(llm)
         self._query_generator = QueryGenerator(llm)
         self._evidence_synthesizer = EvidenceSynthesizer(llm)
-        self._response_generator = ResponseGenerator(llm)
+        self._formulation_generator = FormulationGenerator(llm)
 
     async def run(self, inp: ClinicalInput) -> PipelineResult:
         t_start = time.perf_counter()
@@ -67,7 +67,7 @@ class ClinicalPipeline:
         evidence = await self._evidence_synthesizer.synthesize(
             all_chunks, queries, features,
         )
-        response = await self._response_generator.generate(
+        formulation = await self._formulation_generator.generate(
             evidence, understanding, features,
         )
 
@@ -79,7 +79,7 @@ class ClinicalPipeline:
             features=features,
             queries=queries,
             evidence=evidence,
-            response=response,
+            formulation=formulation,
             elapsed_ms=round(elapsed_ms, 2),
         )
 
