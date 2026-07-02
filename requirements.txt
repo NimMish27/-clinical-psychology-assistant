@@ -35,6 +35,9 @@ tenacity==9.0.0                 # retry logic for LLM calls
 tiktoken==0.8.0                 # token counting (model-agnostic)
 numpy==1.26.4                   # array ops (pinned for compatibility)
 
+# ── Observability ──────────────────────────────────────────────────────────────
+langfuse>=4.0.0                 # LLM observability and tracing
+
 # ── Logging ───────────────────────────────────────────────────────────────────
 structlog==24.4.0               # structured JSON logging
 rich==13.9.4                    # pretty console output

@@ -186,6 +186,22 @@ class LoggingSettings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore", populate_by_name=True)
 
 
+class LangfuseSettings(BaseSettings):
+    """Langfuse observability and tracing configuration."""
+
+    enabled: bool = Field(False, alias="LANGFUSE_ENABLED")
+    public_key: str = Field("", alias="LANGFUSE_PUBLIC_KEY")
+    secret_key: str = Field("", alias="LANGFUSE_SECRET_KEY")
+    base_url: str = Field(
+        "https://cloud.langfuse.com",
+        alias="LANGFUSE_BASE_URL",
+    )
+
+    model_config = SettingsConfigDict(
+        env_file=".env", extra="ignore", populate_by_name=True
+    )
+
+
 class SecuritySettings(BaseSettings):
     """Auth and rate limiting configuration."""
 
@@ -213,6 +229,7 @@ class Settings:
         self.rag = RAGSettings()
         self.ingestion = IngestionSettings()
         self.logging = LoggingSettings()
+        self.langfuse = LangfuseSettings()
         self.security = SecuritySettings()
 
     def is_production(self) -> bool:

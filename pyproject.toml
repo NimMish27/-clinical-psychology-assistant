@@ -9,7 +9,7 @@ readme = "README.md"
 [tool.ruff]
 target-version = "py311"
 line-length = 100
-src = [".", "api", "agents", "rag", "ingestion", "workflows", "config", "utils"]
+src = [".", "api", "agents", "rag", "ingestion", "workflows", "config", "utils", "observability"]
 
 [tool.ruff.lint]
 select = [

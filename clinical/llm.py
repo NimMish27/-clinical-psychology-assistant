@@ -5,6 +5,7 @@ from typing import Any
 
 from config.settings import get_settings
 from app_logging.logger import get_logger
+from observability import get_langfuse_handler
 
 _log = get_logger(__name__)
 
@@ -79,7 +80,12 @@ class LLMService:
             )
 
         full_prompt = f"{system_prompt}\n\n{prompt}" if system_prompt else prompt
-        result = llm.invoke(full_prompt)
+
+        handler = get_langfuse_handler()
+        if handler:
+            result = llm.invoke(full_prompt, config={"callbacks": [handler]})
+        else:
+            result = llm.invoke(full_prompt)
         return result.strip() if result else ""
 
 
