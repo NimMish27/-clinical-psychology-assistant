@@ -40,10 +40,8 @@ class LLMService:
         system_prompt: str | None = None,
     ) -> str:
         """Invoke the LLM and return the generated text."""
-        loop = asyncio.get_event_loop()
         try:
-            return await loop.run_in_executor(
-                None,
+            return await asyncio.to_thread(
                 self._call_llm_sync,
                 prompt,
                 system_prompt,
