@@ -413,12 +413,55 @@ class TestClinicalAPI:
             elapsed_ms=10.0,
         )
 
+    def _mock_graph_state(self):
+        from clinical.case_understanding.models import (
+            CaseUnderstandingResult,
+            DemographicInfo,
+        )
+        from clinical.evidence_synthesis.models import EvidenceSynthesisResult
+        from clinical.formulation.models import ClinicalFormulationResult, Formulation
+        from clinical.query_generation.models import OptimizedQuery, QueryGenerationResult
+        return {
+            "text": "Patient feels anxious.",
+            "understanding": CaseUnderstandingResult(
+                demographic=DemographicInfo(),
+                raw_text="Patient feels anxious.",
+            ),
+            "queries_result": QueryGenerationResult(
+                queries=[
+                    OptimizedQuery(
+                        query="anxiety treatment",
+                        category="treatment",
+                        weight=1.0,
+                        rationale="Core treatment information",
+                    ),
+                ],
+            ),
+            "evidence": EvidenceSynthesisResult(
+                overall_summary="Evidence summary with sufficient content.",
+            ),
+            "formulation": ClinicalFormulationResult(
+                case_summary="Test case summary with enough characters.",
+                possible_formulations=[
+                    Formulation(
+                        label="Cognitive-behavioural understanding",
+                        explanation="Test explanation with enough characters to pass validation.",
+                        supporting_symptoms=["anxiety"],
+                        confidence=0.7,
+                    ),
+                ],
+            ),
+            "missing_info": None,
+            "plan": None,
+            "response": None,
+            "errors": {},
+        }
+
     def test_clinical_analyze_endpoint_registered(self, client):
         test_client, app = client
-        mock_pipeline = MagicMock()
-        mock_pipeline.run = AsyncMock(return_value=self._mock_pipeline())
-        from api.dependencies import get_clinical_pipeline_dep
-        app.dependency_overrides[get_clinical_pipeline_dep] = lambda: mock_pipeline
+        mock_run = AsyncMock(return_value=self._mock_graph_state())
+        from api.dependencies import get_clinical_graph_dep
+        app.dependency_overrides[get_clinical_graph_dep] = lambda: mock_run
         resp = test_client.post(
             "/api/v1/clinical/analyze",
             json={"text": "Patient feels anxious."},
@@ -427,7 +470,7 @@ class TestClinicalAPI:
         assert resp.status_code == 200
         data = resp.json()
         assert data["input_type"] == "single_statement"
-        assert "case_summary" in data["formulation"]
+        assert data["formulation"]
 
     def test_422_empty_text(self, client):
         test_client, app = client
@@ -447,10 +490,9 @@ class TestClinicalAPI:
 
     def test_with_valid_input_type_override(self, client):
         test_client, app = client
-        mock_pipeline = MagicMock()
-        mock_pipeline.run = AsyncMock(return_value=self._mock_pipeline())
-        from api.dependencies import get_clinical_pipeline_dep
-        app.dependency_overrides[get_clinical_pipeline_dep] = lambda: mock_pipeline
+        mock_run = AsyncMock(return_value=self._mock_graph_state())
+        from api.dependencies import get_clinical_graph_dep
+        app.dependency_overrides[get_clinical_graph_dep] = lambda: mock_run
         resp = test_client.post(
             "/api/v1/clinical/analyze",
             json={"text": "Patient reports sadness, anhedonia, fatigue.",

@@ -336,6 +336,119 @@ class TestIngestEndpoint:
             assert "total_chunks" in data
             assert "collection" in data
 
+# ═══════════════════════════════════════════════════════════════
+# POST /api/v1/clinical/analyze
+# ═══════════════════════════════════════════════════════════════
+
+class TestClinicalAnalyzeEndpoint:
+    def test_200_with_mock_graph(self, client):
+        test_client, _ = client
+        mock_state = {
+            "text": "Patient feels anxious.",
+            "understanding": None,
+            "queries_result": None,
+            "evidence": None,
+            "formulation": None,
+            "missing_info": None,
+            "plan": None,
+            "response": None,
+            "errors": {},
+        }
+        mock_run = AsyncMock(return_value=mock_state)
+        from api.dependencies import get_clinical_graph_dep
+        test_client.app.dependency_overrides[get_clinical_graph_dep] = lambda: mock_run
+        resp = test_client.post(
+            "/api/v1/clinical/analyze",
+            json={"text": "Patient feels anxious."},
+        )
+        test_client.app.dependency_overrides.clear()
+        assert resp.status_code == 200
+
+    def test_response_schema_fields(self, client):
+        test_client, _ = client
+        from clinical.case_understanding.models import (
+            CaseUnderstandingResult, DemographicInfo,
+        )
+        from clinical.query_generation.models import OptimizedQuery, QueryGenerationResult
+        from clinical.evidence_synthesis.models import EvidenceSynthesisResult
+        from clinical.formulation.models import ClinicalFormulationResult, Formulation
+
+        mock_state = {
+            "text": "Patient feels anxious.",
+            "understanding": CaseUnderstandingResult(
+                demographic=DemographicInfo(), raw_text="Patient feels anxious.",
+            ),
+            "queries_result": QueryGenerationResult(queries=[
+                OptimizedQuery(query="anxiety", category="treatment", weight=1.0, rationale="test rationale text"),
+            ]),
+            "evidence": EvidenceSynthesisResult(overall_summary="Summary text."),
+            "formulation": ClinicalFormulationResult(
+                case_summary="Test case summary with enough characters.",
+                possible_formulations=[
+                    Formulation(label="CBT formulation", explanation="A" * 20,
+                                supporting_symptoms=["anxiety"], confidence=0.7),
+                ],
+            ),
+            "missing_info": None,
+            "plan": None,
+            "response": None,
+            "errors": {},
+        }
+        mock_run = AsyncMock(return_value=mock_state)
+        from api.dependencies import get_clinical_graph_dep
+        test_client.app.dependency_overrides[get_clinical_graph_dep] = lambda: mock_run
+        resp = test_client.post(
+            "/api/v1/clinical/analyze",
+            json={"text": "Patient feels anxious."},
+        )
+        test_client.app.dependency_overrides.clear()
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "input_type" in data
+        assert "understanding" in data
+        assert "queries" in data
+        assert "evidence" in data
+        assert "formulation" in data
+        assert "missing_info" in data
+        assert "therapeutic_planning" in data
+        assert "response" in data
+        assert "errors" in data
+        assert "elapsed_ms" in data
+
+    def test_422_empty_text(self, client):
+        test_client, _ = client
+        resp = test_client.post(
+            "/api/v1/clinical/analyze",
+            json={"text": ""},
+        )
+        assert resp.status_code == 422
+
+    def test_422_text_too_short(self, client):
+        test_client, _ = client
+        resp = test_client.post(
+            "/api/v1/clinical/analyze",
+            json={"text": "ab"},
+        )
+        assert resp.status_code == 422
+
+    def test_503_when_graph_fails(self, client):
+        test_client, _ = client
+        async def _failing(*args, **kwargs):
+            raise RuntimeError("Graph crashed")
+        from api.dependencies import get_clinical_graph_dep
+        test_client.app.dependency_overrides[get_clinical_graph_dep] = lambda: _failing
+        resp = test_client.post(
+            "/api/v1/clinical/analyze",
+            json={"text": "Patient feels anxious and has had symptoms for weeks."},
+        )
+        test_client.app.dependency_overrides.clear()
+        assert resp.status_code == 503
+
+
+# ═══════════════════════════════════════════════════════════════
+# POST /api/v1/ingest
+# ═══════════════════════════════════════════════════════════════
+
     def test_ingest_response_schema_fields(self, client):
         from api.schemas.models import FileIngestResult, IngestResponse, IngestStatus
         result = IngestResponse(

@@ -271,12 +271,39 @@ class ClinicalAnalyzeRequest(BaseModel):
 
 
 class ClinicalAnalyzeResponse(BaseModel):
-    input_type: str
-    understanding: dict[str, Any]
-    features: dict[str, Any]
-    queries: list[dict[str, Any]]
-    evidence: dict[str, Any]
-    formulation: dict[str, Any]
-    elapsed_ms: float
+    input_type: str = Field(default="", description="Detected input type")
+    understanding: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Case understanding extraction result",
+    )
+    queries: list[dict[str, Any]] = Field(
+        default_factory=list,
+        description="Generated retrieval queries",
+    )
+    evidence: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Evidence synthesis result",
+    )
+    formulation: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Clinical formulation result",
+    )
+    missing_info: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Missing information detection result",
+    )
+    therapeutic_planning: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Therapeutic planning result",
+    )
+    response: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Final clinical response",
+    )
+    errors: dict[str, str] = Field(
+        default_factory=dict,
+        description="Node-level errors keyed by stage name",
+    )
+    elapsed_ms: float = Field(default=0.0, ge=0.0)
 
     model_config = {"frozen": True}

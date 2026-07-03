@@ -106,20 +106,17 @@ def get_request_id(request: Request) -> str:
 RequestIdDep = Annotated[str, Depends(get_request_id)]
 
 
-def get_clinical_pipeline_dep():
-    """Provide the process-wide ClinicalPipeline singleton."""
+def get_clinical_graph_dep():
+    """Provide the clinical graph runner singleton."""
     try:
-        from clinical.pipeline import ClinicalPipeline
-        pipeline = ClinicalPipeline(
-            retriever=get_retriever_dep(),
-        )
-        return pipeline
+        from clinical.graph.graph import run_pipeline
+        return run_pipeline
     except Exception as exc:
-        _log.error("deps.clinical_pipeline_unavailable", error=str(exc))
+        _log.error("deps.clinical_graph_unavailable", error=str(exc))
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Clinical analysis pipeline is unavailable.",
+            detail="Clinical analysis graph is unavailable.",
         ) from exc
 
 
-ClinicalPipelineDep = Annotated[object, Depends(get_clinical_pipeline_dep)]
+ClinicalGraphDep = Annotated[object, Depends(get_clinical_graph_dep)]
