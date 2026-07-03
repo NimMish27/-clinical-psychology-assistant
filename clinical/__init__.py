@@ -22,6 +22,7 @@ from clinical.evidence_synthesis import (
     Uncertainty as EvidenceUncertainty,
 )
 from clinical.formulation import ClinicalFormulationResult as FormulationResult, ClinicalFormulator
+from clinical.graph import GraphState, build_graph, get_graph, run_pipeline, stream_pipeline
 from clinical.missing_info import (
     MissingInfoDetector,
     MissingInfoItem,
@@ -86,7 +87,10 @@ __all__ = [
     "Finding",
     "Formulation",
     "FormulationResult",
+    "GraphState",
     "HomeworkIdea",
+    "build_graph",
+    "get_graph",
     "InterventionDirection",
     "MissingInfoDetector",
     "MissingInfoItem",
@@ -97,7 +101,9 @@ __all__ = [
     "PsychEducationSuggestion",
     "ResponseGenerator",
     "RetrievalQuery",
+    "run_pipeline",
     "SelfCompassionStrategy",
+    "stream_pipeline",
     "Theme",
     "TherapeuticFocus",
     "TherapeuticPlanResult",
