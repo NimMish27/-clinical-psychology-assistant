@@ -7,7 +7,7 @@ FastAPI dependency injection providers.
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import Depends, HTTPException, Request, status
 
@@ -27,7 +27,7 @@ def get_settings_dep():
     return _cached_settings()
 
 
-SettingsDep = Annotated[object, Depends(get_settings_dep)]
+SettingsDep = Annotated[Any, Depends(get_settings_dep)]
 
 
 def get_retriever_dep():
@@ -43,7 +43,7 @@ def get_retriever_dep():
         ) from exc
 
 
-RetrieverDep = Annotated[object, Depends(get_retriever_dep)]
+RetrieverDep = Annotated[Any, Depends(get_retriever_dep)]
 
 
 def get_vector_store_dep():
@@ -59,7 +59,7 @@ def get_vector_store_dep():
         ) from exc
 
 
-VectorStoreDep = Annotated[object, Depends(get_vector_store_dep)]
+VectorStoreDep = Annotated[Any, Depends(get_vector_store_dep)]
 
 
 def get_pdf_loader_dep():
@@ -75,7 +75,7 @@ def get_pdf_loader_dep():
         ) from exc
 
 
-PDFLoaderDep = Annotated[object, Depends(get_pdf_loader_dep)]
+PDFLoaderDep = Annotated[Any, Depends(get_pdf_loader_dep)]
 
 
 def get_chunker_dep():
@@ -95,7 +95,7 @@ def get_chunker_dep():
         ) from exc
 
 
-ChunkerDep = Annotated[object, Depends(get_chunker_dep)]
+ChunkerDep = Annotated[Any, Depends(get_chunker_dep)]
 
 
 def get_request_id(request: Request) -> str:
@@ -119,4 +119,4 @@ def get_clinical_graph_dep():
         ) from exc
 
 
-ClinicalGraphDep = Annotated[object, Depends(get_clinical_graph_dep)]
+ClinicalGraphDep = Annotated[Any, Depends(get_clinical_graph_dep)]
