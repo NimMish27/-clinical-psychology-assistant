@@ -10,6 +10,7 @@ from clinical.formulation.models import ClinicalFormulationResult
 from clinical.missing_info.models import MissingInfoResult
 from clinical.query_generation.models import QueryGenerationResult
 from clinical.response_generation.models import ClinicalResponseResult
+from clinical.safety_validation.models import SafetyValidationResult
 from clinical.therapeutic_planning.models import TherapeuticPlanResult
 from rag.retriever import RetrievedChunk
 
@@ -43,6 +44,7 @@ class GraphState(TypedDict, total=False):
     missing_info: Optional[MissingInfoResult]
     plan: Optional[TherapeuticPlanResult]
     response: Optional[ClinicalResponseResult]
+    safety_report: Optional[SafetyValidationResult]
 
     # ── Runtime metadata ─────────────────────────────────────
     errors: Annotated[dict[str, str], _merge_errors]

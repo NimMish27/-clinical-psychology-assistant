@@ -298,7 +298,11 @@ class ClinicalAnalyzeResponse(BaseModel):
     )
     response: dict[str, Any] = Field(
         default_factory=dict,
-        description="Final clinical response",
+        description="Final clinical response markdown",
+    )
+    safety_report: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Safety validation report with issues found and revision status",
     )
     errors: dict[str, str] = Field(
         default_factory=dict,

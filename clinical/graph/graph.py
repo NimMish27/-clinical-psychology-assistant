@@ -12,6 +12,7 @@ from clinical.graph.nodes import (
     node_query_generation,
     node_response_generation,
     node_retrieval,
+    node_safety_validation,
     node_therapeutic_planning,
 )
 from clinical.graph.state import GraphState
@@ -28,6 +29,7 @@ _NODE_NAMES: dict[str, str] = {
     node_missing_info.__name__: "missing_info",
     node_therapeutic_planning.__name__: "therapeutic_planning",
     node_response_generation.__name__: "response_generation",
+    node_safety_validation.__name__: "safety_validation",
 }
 
 SEQUENCE = [
@@ -51,6 +53,7 @@ SEQUENCE = [
     "missing_info",
     "therapeutic_planning",
     "response_generation",
+    "safety_validation",
 ]
 
 
@@ -82,12 +85,13 @@ def build_graph() -> StateGraph:
     builder.add_node(_tag("missing_info"), node_missing_info)
     builder.add_node(_tag("therapeutic_planning"), node_therapeutic_planning)
     builder.add_node(_tag("response_generation"), node_response_generation)
+    builder.add_node(_tag("safety_validation"), node_safety_validation)
 
     # Sequential chain
     for i in range(len(SEQUENCE) - 1):
         builder.add_edge(_tag(SEQUENCE[i]), _tag(SEQUENCE[i + 1]))
 
-    builder.add_edge(_tag("response_generation"), END)
+    builder.add_edge(_tag("safety_validation"), END)
     builder.set_entry_point(_tag("case_understanding"))
 
     return builder

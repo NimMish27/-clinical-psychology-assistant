@@ -112,6 +112,7 @@ async def clinical_analyze(
         missing_info=_model_dump(state.get("missing_info")),
         therapeutic_planning=_model_dump(state.get("plan")),
         response=_model_dump(state.get("response")),
+        safety_report=_model_dump(state.get("safety_report")),
         errors=errors,
         elapsed_ms=round(elapsed_ms, 2),
     )

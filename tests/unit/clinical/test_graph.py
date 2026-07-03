@@ -330,6 +330,66 @@ class TestNodeResponseGeneration:
         assert "errors" in result
 
 
+class TestNodeSafetyValidation:
+    @pytest.mark.asyncio
+    async def test_validates_clean_response(self):
+        from clinical.graph.nodes import node_safety_validation
+        from clinical.safety_validation.models import SafetyValidationResult
+
+        mock_validator = MagicMock()
+        mock_report = SafetyValidationResult(
+            markdown=_MOCK_RESPONSE.markdown,
+            original_markdown=_MOCK_RESPONSE.markdown,
+            overall_verdict="clean",
+        )
+        mock_validator.validate = AsyncMock(return_value=mock_report)
+
+        with patch("clinical.graph.nodes._get_safety_validator", return_value=mock_validator):
+            state: GraphState = {
+                "text": "test",
+                "response": _MOCK_RESPONSE,
+                "errors": {},
+            }
+            result = await node_safety_validation(state)
+            assert "safety_report" in result
+            assert result["safety_report"].overall_verdict == "clean"
+
+    @pytest.mark.asyncio
+    async def test_revises_when_issues_found(self):
+        from clinical.graph.nodes import node_safety_validation
+        from clinical.safety_validation.models import SafetyValidationResult
+
+        revised_md = _MOCK_RESPONSE.markdown + "\n\n> **Clinical caution**: Added disclaimer."
+        mock_validator = MagicMock()
+        mock_report = SafetyValidationResult(
+            markdown=revised_md,
+            original_markdown=_MOCK_RESPONSE.markdown,
+            overall_verdict="needs_review",
+            was_revised=True,
+            revision_summary="Added disclaimer",
+        )
+        mock_validator.validate = AsyncMock(return_value=mock_report)
+
+        with patch("clinical.graph.nodes._get_safety_validator", return_value=mock_validator):
+            state: GraphState = {
+                "text": "test",
+                "response": _MOCK_RESPONSE,
+                "errors": {},
+            }
+            result = await node_safety_validation(state)
+            assert "safety_report" in result
+            assert "response" in result
+            assert result["response"].markdown == revised_md
+
+    @pytest.mark.asyncio
+    async def test_no_response_returns_error(self):
+        from clinical.graph.nodes import node_safety_validation
+
+        state: GraphState = {"text": "test", "errors": {}}
+        result = await node_safety_validation(state)
+        assert "errors" in result
+
+
 # ═══════════════════════════════════════════════════════════════
 # Graph builder tests
 # ═══════════════════════════════════════════════════════════════
@@ -374,6 +434,15 @@ class TestBuildGraph:
         mock_resp = MagicMock()
         mock_resp.generate = AsyncMock(return_value=_MOCK_RESPONSE)
 
+        mock_safety = MagicMock()
+        mock_safety.validate = AsyncMock(return_value=MagicMock(
+            markdown=_MOCK_RESPONSE.markdown,
+            original_markdown=_MOCK_RESPONSE.markdown,
+            overall_verdict="clean",
+            was_revised=False,
+            revision_summary="",
+        ))
+
         with (
             patch("clinical.graph.nodes._get_case_understanding", return_value=mock_extractor),
             patch("clinical.graph.nodes._get_query_generator", return_value=mock_gen),
@@ -383,6 +452,7 @@ class TestBuildGraph:
             patch("clinical.graph.nodes._get_missing_info_detector", return_value=mock_det),
             patch("clinical.graph.nodes._get_therapeutic_planner", return_value=mock_planner),
             patch("clinical.graph.nodes._get_response_generator", return_value=mock_resp),
+            patch("clinical.graph.nodes._get_safety_validator", return_value=mock_safety),
         ):
             from clinical.graph.graph import run_pipeline
 
@@ -393,6 +463,7 @@ class TestBuildGraph:
             assert "evidence" in result
             assert "formulation" in result
             assert "plan" in result
+            assert "safety_report" in result
 
 
 class TestDeduplicate:

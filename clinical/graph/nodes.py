@@ -12,6 +12,7 @@ from clinical.llm import LLMService, get_llm_service
 from clinical.missing_info import MissingInfoDetector
 from clinical.query_generation import RetrievalQueryGenerator
 from clinical.response_generation import ResponseGenerator
+from clinical.safety_validation import SafetyValidator
 from clinical.therapeutic_planning import TherapeuticPlanner
 from rag.retriever import Retriever, RetrievedChunk, get_retriever
 from app_logging.logger import get_logger
@@ -44,6 +45,7 @@ _cf: ClinicalFormulator | None = None  # noqa: N816
 _mi: MissingInfoDetector | None = None  # noqa: N816
 _tp: TherapeuticPlanner | None = None  # noqa: N816
 _rg: ResponseGenerator | None = None  # noqa: N816
+_sv: SafetyValidator | None = None  # noqa: N816
 
 
 def _get_case_understanding(llm: Any) -> CaseUnderstandingExtractor:
@@ -100,6 +102,13 @@ def _get_response_generator(llm: Any) -> ResponseGenerator:
     if _rg is None:
         _rg = ResponseGenerator(llm=llm)
     return _rg
+
+
+def _get_safety_validator() -> SafetyValidator:
+    global _sv
+    if _sv is None:
+        _sv = SafetyValidator()
+    return _sv
 
 
 # ── Node implementations ─────────────────────────────────────
@@ -346,3 +355,26 @@ async def node_response_generation(state: GraphState) -> dict[str, Any]:
     except Exception as exc:
         _log.error("graph.response_generation_failed", error=str(exc))
         return {"errors": {"response_generation": f"{exc}"}}
+
+
+async def node_safety_validation(state: GraphState) -> dict[str, Any]:
+    """Validate and revise the clinical response for safety concerns."""
+    response = state.get("response")
+    if not response:
+        return {"errors": {"safety_validation": "No response to validate"}}
+
+    try:
+        validator = _get_safety_validator()
+        report = await validator.validate(response.markdown)
+        if report.was_revised:
+            from clinical.response_generation.models import ClinicalResponseResult
+            revised = ClinicalResponseResult(
+                markdown=report.markdown,
+                sections_generated=response.sections_generated,
+                confidence=response.confidence,
+            )
+            return {"safety_report": report, "response": revised}
+        return {"safety_report": report}
+    except Exception as exc:
+        _log.error("graph.safety_validation_failed", error=str(exc))
+        return {"errors": {"safety_validation": f"{exc}"}}

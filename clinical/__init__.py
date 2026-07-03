@@ -47,6 +47,13 @@ from clinical.response_generation import (
     ClinicalResponseResult,
     ResponseGenerator,
 )
+from clinical.safety_validation import (
+    SafetyIssue,
+    SafetyIssueCategory,
+    SafetyValidationResult,
+    SafetyValidator,
+    Severity,
+)
 from clinical.therapeutic_planning import (
     ACTStrategy,
     BehaviouralActivationSuggestion,
@@ -100,6 +107,11 @@ __all__ = [
     "PipelineStage",
     "PsychEducationSuggestion",
     "ResponseGenerator",
+    "SafetyIssue",
+    "SafetyIssueCategory",
+    "SafetyValidationResult",
+    "SafetyValidator",
+    "Severity",
     "RetrievalQuery",
     "run_pipeline",
     "SelfCompassionStrategy",
