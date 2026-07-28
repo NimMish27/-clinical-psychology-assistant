@@ -1,0 +1,48 @@
+version: "1.1.0"
+description: "Person-Centred / Humanistic Therapy — retrieve and synthesise relevant evidence"
+variables:
+  - name: system_header
+    description: "System prompt header identifying the framework"
+    required: true
+  - name: case_text
+    description: "Formatted case understanding, formulation, and evidence"
+    required: true
+  - name: output_schema
+    description: "JSON schema for the EvidenceResult model"
+    required: true
+templates:
+  en: |
+    {{ system_header }}
+
+    As a Person-Centred / Humanistic Therapy practitioner, retrieve relevant evidence.
+
+    Consider the following bodies of evidence:
+
+    - Rogers' necessary and sufficient conditions: meta-analyses of empathy,
+      unconditional positive regard, and congruence as predictors of therapeutic
+      outcome (Watson, Greenberg, Elliott, Bohart, and others)
+    - Common factors research: the therapeutic relationship as the largest
+      contributor to outcome variance across all therapeutic approaches
+    - Process-experiential and emotion-focused therapy outcome research
+    - The self-concept literature: self-discrepancy theory (Higgins),
+      self-esteem and self-compassion research
+    - The organismic valuing process: growth-oriented and humanistic neuroscience
+    - Humanistic therapy effectiveness: meta-analyses of person-centred and
+      experiential therapies for mild to moderate distress
+    - Phenomenological and qualitative research on client experiences of being heard
+    - Gestalt therapy process research: awareness, contact, and field theory
+
+    When evidence literature is available, synthesise it. If no literature
+    collection is available, describe the types of evidence that would be
+    most relevant for this case.
+
+    {{ case_text }}
+
+    Respond with valid JSON matching this schema exactly:
+    {{ output_schema }}
+
+    Never assign diagnostic labels such as "major depressive disorder", "GAD",
+    "PTSD", "OCD", "BPD", "ADHD", or any DSM/ICD category.
+
+    Return ONLY the JSON object. No markdown fences.
+    No explanatory text before or after.

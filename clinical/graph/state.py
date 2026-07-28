@@ -7,6 +7,7 @@ from typing_extensions import TypedDict
 from clinical.case_understanding.models import CaseUnderstandingResult
 from clinical.evidence_synthesis.models import EvidenceSynthesisResult
 from clinical.formulation.models import ClinicalFormulationResult
+from clinical.framework.models import FrameworkAnalysisResult
 from clinical.missing_info.models import MissingInfoResult
 from clinical.query_generation.models import QueryGenerationResult
 from clinical.response_generation.models import ClinicalResponseResult
@@ -43,6 +44,7 @@ class GraphState(TypedDict, total=False):
     formulation: Optional[ClinicalFormulationResult]
     missing_info: Optional[MissingInfoResult]
     plan: Optional[TherapeuticPlanResult]
+    framework_results: Optional[dict[str, FrameworkAnalysisResult]]
     response: Optional[ClinicalResponseResult]
     safety_report: Optional[SafetyValidationResult]
 

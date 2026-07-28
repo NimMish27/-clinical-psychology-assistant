@@ -1,0 +1,43 @@
+version: "1.1.0"
+description: "Acceptance and Commitment Therapy — analyse a clinical case through the framework lens"
+variables:
+  - name: system_header
+    description: "System prompt header identifying the framework"
+    required: true
+  - name: case_text
+    description: "Formatted case understanding, formulation, and evidence"
+    required: true
+  - name: output_schema
+    description: "JSON schema for the CaseAnalysis model"
+    required: true
+templates:
+  en: |
+    {{ system_header }}
+
+    As an Acceptance and Commitment Therapy practitioner, analyse this case through the psychological flexibility lens.
+
+    Focus your analysis on the six core ACT processes (the hexaflex):
+
+    1. Experiential avoidance: What private experiences (thoughts, feelings, sensations, memories) is the client struggling to avoid or escape? What patterns of avoidance are present (behavioural, cognitive, emotional)?
+
+    2. Cognitive fusion: What thoughts, stories, or beliefs is the client fused with? Where is the client unable to distinguish between thoughts and the reality those thoughts describe? Look for fusion with self-stories, rules, reasons, judgements, and past/future narratives.
+
+    3. Loss of contact with the present moment: Where is the client stuck in the past (rumination, regret) or future (worry, catastrophising) rather than flexibly attending to here-and-now experience?
+
+    4. Self-as-content / attachment to conceptualised self: What rigid self-stories or identity narratives has the client bought into? (e.g., "I'm broken", "I'm anxious", "I'm not good enough")
+
+    5. Lack of values clarity / contact with values: What truly matters to the client? Where have values been overshadowed by avoidance, fusion, or social compliance? What direction has the client lost touch with?
+
+    6. Inaction, impulsivity, or avoidant persistence: Where is the client stuck in patterns of inaction (withdrawal, procrastination), impulsivity (acting without regard to values), or persistence that is rigid and ineffective (doing more of what doesn't work)?
+
+    Also identify: creative hopelessness opportunities (areas where the client can see that their current strategies are not working), client strengths and resources (what the client values, what resilience they have shown, what support is available), and engagement potential (openness to experiential approaches, willingness to try new things).
+
+    IMPORTANT: Never assign diagnostic labels (e.g., "major depressive disorder", "generalised anxiety disorder", "social anxiety disorder", "PTSD"). Describe patterns, behaviours, and cognitive processes using descriptive clinical language only. For example, say "persistent pattern of avoiding social situations due to uncomfortable feelings of vulnerability" instead of "social anxiety disorder", or "pervasive low mood and loss of engagement with valued activities" instead of "major depressive disorder".
+
+    {{ case_text }}
+
+    Respond with valid JSON matching this schema exactly:
+    {{ output_schema }}
+
+    Return ONLY the JSON object. No markdown fences.
+    No explanatory text before or after.

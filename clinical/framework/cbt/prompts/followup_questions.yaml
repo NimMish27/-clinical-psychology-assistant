@@ -1,0 +1,73 @@
+version: "1.1.0"
+description: "Cognitive Behavioral Therapy — suggest follow-up questions"
+variables:
+  - name: system_header
+    description: "System prompt header identifying the framework"
+    required: true
+  - name: case_text
+    description: "Formatted case understanding, formulation, and evidence"
+    required: true
+  - name: output_schema
+    description: "JSON schema for the FollowupQuestionsResult model"
+    required: true
+templates:
+  en: |
+    {{ system_header }}
+
+    As a Cognitive Behavioral Therapy practitioner, suggest follow-up questions for assessment and therapy.
+
+    Generate questions across these CBT-relevant domains:
+
+    1. Assessment and cognitive exploration:
+       - "When you notice yourself feeling [emotion], what thoughts run through your mind?"
+       - "What went through your mind just before you started to feel that way?"
+       - "What does that say about you? About others? About your future?"
+       - "Can you give me a specific example of when that happened recently?"
+       - "On a scale of 0-100, how much do you believe that thought right now?"
+       - "What's the worst that could happen? What would that mean?"
+       - "What would your [critical inner voice] say about this?"
+       - "Where did you learn to see things that way?"
+
+    2. Therapeutic probes (Socratic questioning):
+       - "What is the evidence for and against this thought?"
+       - "Is there an alternative way of looking at this situation?"
+       - "What would you tell a close friend who had this thought?"
+       - "What are the advantages and disadvantages of thinking this way?"
+       - "What advice would your future self (looking back) give you about this?"
+       - "Has there been a time when this thought was not true?"
+       - "What would it mean if this thought is not 100% true?"
+       - "Are you thinking in 'all-or-nothing' terms here?"
+
+    3. Behavioural activation and exposure probes:
+       - "What activities have you stopped doing that you used to enjoy?"
+       - "What would you do differently if you were feeling less [anxious/down]?"
+       - "What have you been avoiding that you'd like to face?"
+       - "How does staying in bed / avoiding that situation affect your mood in the long run?"
+       - "If we made a list of activities from easiest to hardest, where would you want to start?"
+
+    4. Homework and skill generalisation:
+       - "What would be helpful to practise between now and our next session?"
+       - "What's one small experiment you could try this week?"
+       - "How will you remember to use this skill when you need it?"
+       - "What might get in the way of doing this homework? How could we plan for that?"
+       - "What did you learn from the homework that surprised you?"
+
+    5. Engagement and therapeutic alliance:
+       - "How was it for you to try this exercise? What felt helpful or difficult?"
+       - "Does the way we're working together make sense to you?"
+       - "Is there anything you'd like to change about how we use our session time?"
+       - "What has been the most useful part of our work together so far?"
+       - "What are you hoping we'll focus on in today's session?"
+
+    IMPORTANT: Never assign diagnostic labels (e.g., "major depressive disorder", "generalised anxiety disorder"). Describe patterns, behaviours, and cognitive processes using descriptive clinical language only. Frame questions in a collaborative, curious, non-judgemental manner consistent with the CBT therapeutic stance.
+
+    {{ case_text }}
+
+    Include assessment questions, therapeutic probes, outcome monitoring
+    questions, and engagement questions.
+
+    Respond with valid JSON matching this schema exactly:
+    {{ output_schema }}
+
+    Return ONLY the JSON object. No markdown fences.
+    No explanatory text before or after.

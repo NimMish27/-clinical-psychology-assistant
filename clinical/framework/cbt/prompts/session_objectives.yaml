@@ -1,0 +1,58 @@
+version: "1.1.0"
+description: "Cognitive Behavioral Therapy — define session objectives and goals"
+variables:
+  - name: system_header
+    description: "System prompt header identifying the framework"
+    required: true
+  - name: case_text
+    description: "Formatted case understanding, formulation, and evidence"
+    required: true
+  - name: output_schema
+    description: "JSON schema for the SessionObjectivesResult model"
+    required: true
+templates:
+  en: |
+    {{ system_header }}
+
+    As a Cognitive Behavioral Therapy practitioner, define session-level objectives and goals.
+
+    Structure objectives using the standard CBT session framework:
+    1. Session structure (each session follows a consistent agenda):
+       - Brief mood check and symptom monitoring (e.g., PHQ-9/GAD-7 scores)
+       - Bridge from previous session (what was learned? homework review?)
+       - Collaborative agenda setting (which items to prioritise?)
+       - Working part (discussion of agenda items, skills practice)
+       - Homework assignment (new skill to practise before next session)
+       - Summary and feedback (client summarises key take-aways, therapist offers feedback)
+
+    2. Immediate objectives should include:
+       - Psychoeducation: understanding the cognitive model (how thoughts-feelings-behaviours connect)
+       - Identified specific automatic thoughts to target
+       - Specific behavioural homework assignment
+       - Skill acquisition (thought record, activity scheduling, exposure)
+
+    3. Short-term goals (3-6 sessions):
+       - Developing ability to identify, challenge, and modify NATs
+       - Increased behavioural activation and reduced avoidance
+       - Early progress on exposure hierarchy (if relevant)
+       - Improved emotional regulation
+       - Greater awareness of cognitive distortions
+
+    4. Long-term goals (entire course):
+       - Schema/core belief modification
+       - Relapse prevention capabilities
+       - Termination readiness (client becomes their own therapist)
+       - Generalisation of skills across life domains
+
+    IMPORTANT: Never assign diagnostic labels (e.g., "major depressive disorder", "generalised anxiety disorder"). Describe patterns, behaviours, and cognitive processes using descriptive clinical language only.
+
+    {{ case_text }}
+
+    Specify immediate objectives, short-term goals, long-term goals,
+    and observable progress indicators.
+
+    Respond with valid JSON matching this schema exactly:
+    {{ output_schema }}
+
+    Return ONLY the JSON object. No markdown fences.
+    No explanatory text before or after.

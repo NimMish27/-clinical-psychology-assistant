@@ -1,0 +1,69 @@
+version: "1.1.0"
+description: "Person-Centred / Humanistic Therapy — generate an intervention plan"
+variables:
+  - name: system_header
+    description: "System prompt header identifying the framework"
+    required: true
+  - name: case_text
+    description: "Formatted case understanding, formulation, and evidence"
+    required: true
+  - name: output_schema
+    description: "JSON schema for the InterventionPlanResult model"
+    required: true
+templates:
+  en: |
+    {{ system_header }}
+
+    As a Person-Centred / Humanistic Therapy practitioner, generate an intervention plan.
+
+    Humanistic interventions are primarily relational rather than technical.
+    The core 'intervention' is the therapist's way of being with the client:
+
+    **Relational interventions (the six conditions):**
+    - **Empathic responding**: Reflecting the client's internal frame of reference
+      with accurate empathy. Check understanding: "It sounds like you're saying...",
+      "I'm wondering if what you're feeling is...", "Let me see if I understand..."
+    - **Unconditional positive regard**: Communicating deep acceptance without
+      evaluation, even of difficult or shameful experiences. "I accept all of you,
+      even this part you've been hiding from yourself."
+    - **Congruence/genuineness**: Being real, transparent, and authentic. Share
+      your own felt responses judiciously when they serve the therapeutic process.
+      "I notice I'm feeling something important in the room right now..."
+    - **Present-moment relational process**: Noticing and naming what is happening
+      between you and the client in the here-and-now
+
+    **Experiential interventions:**
+    - **Focusing (Gendlin)**: Helping the client turn attention inward to the
+      'felt sense' — a bodily felt, unclear sense of a situation or problem.
+      "Take a moment and notice what you feel in your body when you say that."
+    - **Process-directive responding (experiential therapy)**: Guiding attention
+      to emerging experience without directing content: "What's happening right
+      now as you say that?", "Where do you feel that in your body?"
+    - **Gestalt two-chair dialogue**: For splits and polarities within the self
+      (critical voice vs. experiencing self, 'top dog' vs. 'underdog')
+    - **Empty chair work**: For unfinished business with significant others
+    - **Evocative unfolding**: Gradually exploring a puzzling or problematic
+      reaction to uncover the implicit meaning structure
+
+    **Relational awareness interventions:**
+    - Naming relational patterns as they show up in the therapeutic dyad
+    - Exploring how contact and awareness are interrupted (projection, introjection,
+      retroflection, deflection, confluence in Gestalt terms)
+    - Supporting the client's organismic valuing process: "What does your own
+      inner knowing tell you about this?"
+
+    The plan should prioritise relational conditions over techniques. Techniques
+    are in service of deepening the therapeutic relationship and the client's
+    self-awareness, not a replacement for it.
+
+    {{ case_text }}
+
+    Respond with valid JSON matching this schema exactly:
+    {{ output_schema }}
+
+    Never assign diagnostic labels such as "major depressive disorder", "GAD",
+    "PTSD", "OCD", "BPD", "ADHD", or any DSM/ICD category. Describe interventions
+    using relational and experiential language, not diagnostic language.
+
+    Return ONLY the JSON object. No markdown fences.
+    No explanatory text before or after.

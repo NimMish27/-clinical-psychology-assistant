@@ -1,0 +1,36 @@
+version: "1.1.0"
+description: "Cognitive Behavioral Therapy — analyse a clinical case through the framework lens"
+variables:
+  - name: system_header
+    description: "System prompt header identifying the framework"
+    required: true
+  - name: case_text
+    description: "Formatted case understanding, formulation, and evidence"
+    required: true
+  - name: output_schema
+    description: "JSON schema for the CaseAnalysis model"
+    required: true
+templates:
+  en: |
+    {{ system_header }}
+
+    As a Cognitive Behavioral Therapy practitioner, analyse this case through the CBT lens.
+
+    Focus your analysis on:
+    1. Negative automatic thoughts (NATs) the client may be experiencing
+    2. Cognitive distortions (e.g., catastrophising, black-and-white thinking, mind reading, personalisation, overgeneralisation, emotional reasoning, should-statements)
+    3. Core beliefs (about self, others, and the world) and intermediate beliefs (rules, attitudes, assumptions)
+    4. The cognitive triad: the client's view of self, world/others, and future
+    5. Safety behaviours and avoidance patterns that maintain the problem
+    6. Behavioural patterns: behavioural activation level, avoidance, withdrawal, reassurance-seeking
+    7. Client strengths and resources that CBT can leverage (motivation, insight, social support, coping skills, willingness to engage in homework)
+
+    IMPORTANT: Never assign diagnostic labels (e.g., "major depressive disorder", "generalised anxiety disorder", "social anxiety disorder", "PTSD"). Describe patterns, behaviours, and cognitive processes using descriptive clinical language only. For example, say "elevated anxiety in social situations" instead of "social anxiety disorder", or "persistent low mood and reduced interest in activities" instead of "major depressive disorder".
+
+    {{ case_text }}
+
+    Respond with valid JSON matching this schema exactly:
+    {{ output_schema }}
+
+    Return ONLY the JSON object. No markdown fences.
+    No explanatory text before or after.

@@ -1,0 +1,60 @@
+version: "1.1.0"
+description: "Cognitive Behavioral Therapy — generate an intervention plan"
+variables:
+  - name: system_header
+    description: "System prompt header identifying the framework"
+    required: true
+  - name: case_text
+    description: "Formatted case understanding, formulation, and evidence"
+    required: true
+  - name: output_schema
+    description: "JSON schema for the InterventionPlanResult model"
+    required: true
+templates:
+  en: |
+    {{ system_header }}
+
+    As a Cognitive Behavioral Therapy practitioner, generate a detailed intervention plan.
+
+    Draw from the following CBT intervention techniques and match them to the case:
+
+    Cognitive techniques:
+    - Daily thought record (situation, mood, automatic thought, evidence for/against, alternative thought, re-rate mood)
+    - Cognitive restructuring through Socratic questioning (What's the evidence? What's an alternative view? What's the worst that could happen? What would you tell a friend?)
+    - Pie-chart and continuum techniques
+    - Decatastrophising / "what if" technique
+    - Identifying and modifying cognitive distortions
+    - Core belief worksheet (old belief -> evidence for and against -> new, more balanced belief)
+    - Behavioural experiment log (prediction, experiment, outcome, alternative prediction)
+
+    Behavioural techniques:
+    - Activity scheduling and activity monitoring
+    - Graded task assignment (breaking tasks into manageable steps)
+    - Behavioural activation hierarchy
+    - Exposure hierarchy and systematic desensitisation
+    - Behavioural experiments (hypothesis testing)
+    - Response prevention
+    - Distraction and refocusing techniques
+    - Relaxation strategies (diaphragmatic breathing, progressive muscle relaxation)
+
+    Relapse prevention techniques:
+    - Identifying early warning signs
+    - High-risk situation recognition
+    - Coping strategy rehearsal
+    - Wellness and maintenance planning
+    - Lapse vs. relapse distinction
+
+    For each intervention specify: the specific technique, the clinical rationale for choosing it, how it will be implemented, what the client will do between sessions (homework), and expected mechanisms of change.
+
+    IMPORTANT: Never assign diagnostic labels (e.g., "major depressive disorder", "generalised anxiety disorder"). Describe patterns, behaviours, and cognitive processes using descriptive clinical language only.
+
+    {{ case_text }}
+
+    List specific interventions with technique and rationale.
+    Describe the provisional strategy, estimated duration, and expected outcomes.
+
+    Respond with valid JSON matching this schema exactly:
+    {{ output_schema }}
+
+    Return ONLY the JSON object. No markdown fences.
+    No explanatory text before or after.

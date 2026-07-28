@@ -4,9 +4,14 @@ import time
 import traceback
 from typing import Any
 
+import asyncio
+
 from clinical.case_understanding import CaseUnderstandingExtractor
 from clinical.evidence_synthesis import EvidenceSynthesizer
 from clinical.formulation import ClinicalFormulator
+from clinical.framework.base import ClinicalFramework
+from clinical.framework.models import FrameworkAnalysisResult, FrameworkCaseInput
+from clinical.framework.registry import FrameworkRegistry
 from clinical.graph.state import GraphState
 from clinical.llm import LLMService, get_llm_service
 from clinical.missing_info import MissingInfoDetector
@@ -265,6 +270,94 @@ async def node_therapeutic_planning(state: GraphState) -> dict[str, Any]:
         return {"errors": {"therapeutic_planning": f"{exc}"}}
 
 
+async def node_framework_analysis(state: GraphState) -> dict[str, Any]:
+    """Run applicable framework plugins in parallel and collect guidance."""
+    understanding = state.get("understanding")
+    if not understanding:
+        return {"errors": {"framework_analysis": "No case understanding available"}}
+
+    try:
+        case_dict = understanding.to_flat_dict()
+        formulation = state.get("formulation")
+        formulation_dict = formulation.model_dump() if formulation else None
+        evidence = state.get("evidence")
+        evidence_str = evidence.overall_summary if evidence else None
+        llm = get_llm_service()
+
+        registry = FrameworkRegistry.get_instance()
+        applicable = registry.applicable_for(case_dict)
+
+        if not applicable:
+            _log.info("graph.framework_analysis.no_applicable_frameworks")
+            return {"framework_results": {}}
+
+        async def _run(slug: str, plugin_cls: type) -> FrameworkAnalysisResult:
+            try:
+                plugin = plugin_cls()
+                if isinstance(plugin, ClinicalFramework):
+                    fw_input = FrameworkCaseInput(
+                        case_understanding=case_dict,
+                        formulation=formulation_dict,
+                        evidence_summary=evidence_str,
+                        raw_text=state.get("text", ""),
+                        session_id=state.get("session_id"),
+                    )
+                    output = await plugin.run_full_analysis(fw_input, llm)
+                    parts: list[str] = []
+                    if output.conceptualization:
+                        parts.append(f"**Conceptualization**\n{output.conceptualization.conceptualization_summary}")
+                    if output.therapeutic_focus:
+                        parts.append(f"**Therapeutic Focus**\n{' - '.join(output.therapeutic_focus.primary_focus_areas)}")
+                    if output.intervention_plan:
+                        parts.append(f"**Intervention Plan**\n{output.intervention_plan.provisional_strategy[:300]}")
+                    if output.limitations and output.limitations.caveats:
+                        parts.append(f"**Caveats**\n{' - '.join(output.limitations.caveats[:3])}")
+                    guidance = "\n\n".join(parts) if parts else "Analysis completed."
+                    return FrameworkAnalysisResult(
+                        slug=slug,
+                        display_name=plugin_cls.metadata().display_name,
+                        guidance=guidance,
+                        applicable=True,
+                        error=output.error,
+                    )
+                result = await plugin.analyze(
+                    case_understanding=case_dict,
+                    formulation=formulation_dict,
+                    evidence=evidence_str,
+                    llm=llm,
+                )
+                return result
+            except Exception as exc:
+                _log.warning("graph.framework_analysis.plugin_failed", slug=slug, error=str(exc))
+                return FrameworkAnalysisResult(
+                    slug=slug,
+                    display_name=slug,
+                    applicable=True,
+                    error=str(exc),
+                )
+
+        results_list = await asyncio.gather(
+            *[_run(slug, cls) for slug, cls in applicable],
+            return_exceptions=False,
+        )
+
+        results: dict[str, FrameworkAnalysisResult] = {
+            r.slug: r for r in results_list
+        }
+
+        _log.info(
+            "graph.framework_analysis.complete",
+            applicable=len(applicable),
+            successful=sum(1 for r in results_list if r.guidance),
+        )
+
+        return {"framework_results": results}
+
+    except Exception as exc:
+        _log.error("graph.framework_analysis.failed", error=str(exc))
+        return {"errors": {"framework_analysis": f"{exc}"}}
+
+
 async def node_response_generation(state: GraphState) -> dict[str, Any]:
     """Compose the final markdown clinical report."""
     understanding = state.get("understanding")
@@ -333,6 +426,18 @@ async def node_response_generation(state: GraphState) -> dict[str, Any]:
             dbt = [f"{s.technique}: {s.rationale}" for s in plan.dbt_strategies]
             refs = plan.references if hasattr(plan, "references") else []
 
+        # Collect framework guidance
+        framework_results = state.get("framework_results") or {}
+        framework_guidance = None
+        if framework_results:
+            guidance_parts = []
+            for slug, fr in sorted(framework_results.items()):
+                if fr.guidance:
+                    meta = slug.upper()
+                    guidance_parts.append(f"**{meta} Perspective**\n{fr.guidance}")
+            if guidance_parts:
+                framework_guidance = "\n\n---\n\n".join(guidance_parts)
+
         result = await generator.generate(
             case_summary=formulation_text,
             presenting_concerns=presenting or None,
@@ -350,6 +455,7 @@ async def node_response_generation(state: GraphState) -> dict[str, Any]:
             dbt_strategies=dbt or None,
             references=refs or None,
             caution=caution_text,
+            framework_guidance=framework_guidance,
         )
         return {"response": result}
     except Exception as exc:

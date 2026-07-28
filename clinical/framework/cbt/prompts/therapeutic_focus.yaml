@@ -1,0 +1,39 @@
+version: "1.1.0"
+description: "Cognitive Behavioral Therapy — identify therapeutic focus areas"
+variables:
+  - name: system_header
+    description: "System prompt header identifying the framework"
+    required: true
+  - name: case_text
+    description: "Formatted case understanding, formulation, and evidence"
+    required: true
+  - name: output_schema
+    description: "JSON schema for the TherapeuticFocusResult model"
+    required: true
+templates:
+  en: |
+    {{ system_header }}
+
+    As a Cognitive Behavioral Therapy practitioner, identify the primary therapeutic focus areas for this case.
+
+    Consider these CBT focus domains:
+    1. Cognitive interventions: cognitive restructuring of distorted automatic thoughts; modifying intermediate beliefs (rules, attitudes, assumptions); restructuring core beliefs / schemas; Socratic questioning and guided discovery; thought records (daily, cognitive-restructuring, behavioural-experiment formats)
+    2. Behavioural interventions: behavioural activation (activity scheduling, graded task assignment); exposure therapy (in vivo, imaginal, interoceptive, with response prevention); behavioural experiments (hypothesis-testing); relaxation and coping skills training; social skills training
+    3. Emotional focus: emotional regulation skills; identifying and labelling emotions; distress tolerance
+    4. Relapse prevention: identifying high-risk situations; developing coping strategies; well-being and maintenance planning
+    5. Common factors: building therapeutic alliance; enhancing homework compliance; increasing motivation and engagement
+
+    Stage and sequence the interventions: What should be addressed first? What requires stabilisation before proceeding? What builds the foundation for later work?
+
+    IMPORTANT: Never assign diagnostic labels (e.g., "major depressive disorder", "generalised anxiety disorder"). Describe patterns, behaviours, and cognitive processes using descriptive clinical language only.
+
+    {{ case_text }}
+
+    Specify primary and secondary focus areas, staging/sequencing,
+    and the clinical rationale.
+
+    Respond with valid JSON matching this schema exactly:
+    {{ output_schema }}
+
+    Return ONLY the JSON object. No markdown fences.
+    No explanatory text before or after.

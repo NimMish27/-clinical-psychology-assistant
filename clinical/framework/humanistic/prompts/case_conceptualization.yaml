@@ -1,0 +1,64 @@
+version: "1.1.0"
+description: "Person-Centred / Humanistic Therapy — generate a case conceptualisation"
+variables:
+  - name: system_header
+    description: "System prompt header identifying the framework"
+    required: true
+  - name: case_text
+    description: "Formatted case understanding, formulation, and evidence"
+    required: true
+  - name: output_schema
+    description: "JSON schema for the CaseConceptualization model"
+    required: true
+templates:
+  en: |
+    {{ system_header }}
+
+    As a Person-Centred / Humanistic Therapy practitioner, generate a case conceptualisation.
+
+    Structure the conceptualisation around Rogers' self-theory:
+
+    1. **Self-concept and self-structure**: How does the client perceive themselves?
+       What self-narratives, self-evaluations, and identity constructs are present?
+       Is there a discrepancy between the real self (actualising tendency) and the
+       ideal self (introjected conditions of worth)?
+
+    2. **Conditions of worth**: What conditional positive regard has the client
+       internalised from significant others, culture, or society? What must the
+       client believe they must be or do to be worthy of love, acceptance, or respect?
+       Examples: "I must be perfect to be loved", "I must not show weakness",
+       "My feelings are wrong/bad/shameful".
+
+    3. **Incongruence**: Where does the client's actual organismic experience clash
+       with their self-concept? How does this create vulnerability, anxiety, or
+       defensiveness? Describe the gap between experiencing and self-structure.
+
+    4. **Defensiveness and disorganisation**: How does the client protect their
+       self-structure? Subception (distorting or denying experience), perceptual
+       selectivity, rationalisation, or more severe disorganisation when
+       incongruence overwhelms the self-structure.
+
+    5. **Self-regard**: What is the client's level of positive self-regard?
+       Is self-regard conditional (dependent on meeting conditions of worth) or
+       unconditional? How does this affect the client's willingness to fully
+       experience their inner world?
+
+    6. **Organismic trusting**: Has the client lost trust in their own inner
+       experiencing as a guide for living? Do they rely on external authorities,
+       rules, or shoulds?
+
+    7. **Maintaining cycles**: How do conditions of worth, incongruence, and
+       defensiveness interact to maintain the client's distress and block growth?
+
+    {{ case_text }}
+
+    Respond with valid JSON matching this schema exactly:
+    {{ output_schema }}
+
+    Never assign diagnostic labels such as "major depressive disorder", "GAD",
+    "PTSD", "OCD", "BPD", "ADHD", or any DSM/ICD category. Describe patterns
+    and processes using the language of self-theory — conditions of worth,
+    incongruence, self-regard, organismic valuing, and the actualising tendency.
+
+    Return ONLY the JSON object. No markdown fences.
+    No explanatory text before or after.

@@ -1,0 +1,30 @@
+version: "1.0.0"
+description: "General Psychotherapy — describe limitations and contraindications"
+variables:
+  - name: system_header
+    description: "System prompt header identifying the framework"
+    required: true
+  - name: case_text
+    description: "Formatted case understanding, formulation, and evidence"
+    required: true
+  - name: output_schema
+    description: "JSON schema for the LimitationsResult model"
+    required: true
+templates:
+  en: |
+    {{ system_header }}
+
+    As a General Psychotherapy expert, describe limitations.
+
+    May lack the specificity of specialised frameworks for particular disorders; integrates flexibly but with less theoretical precision
+
+    {{ case_text }}
+
+    List contraindications, precautions, alternative frameworks that
+    may be more appropriate, and general caveats.
+
+    Respond with valid JSON matching this schema exactly:
+    {{ output_schema }}
+
+    Return ONLY the JSON object. No markdown fences.
+    No explanatory text before or after.

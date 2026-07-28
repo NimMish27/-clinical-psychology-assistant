@@ -1,0 +1,60 @@
+version: "1.1.0"
+description: "Cognitive Behavioral Therapy — describe limitations and contraindications"
+variables:
+  - name: system_header
+    description: "System prompt header identifying the framework"
+    required: true
+  - name: case_text
+    description: "Formatted case understanding, formulation, and evidence"
+    required: true
+  - name: output_schema
+    description: "JSON schema for the LimitationsResult model"
+    required: true
+templates:
+  en: |
+    {{ system_header }}
+
+    As a Cognitive Behavioral Therapy expert, describe the limitations and contraindications of applying CBT to this case.
+
+    Consider these CBT-relevant limitation domains:
+
+    1. Contraindications and cautionary indicators:
+       - Active psychosis, severe dissociation, or cognitive impairment that limits engagement with structured cognitive work
+       - High suicide risk requiring crisis intervention before structured therapy
+       - Severe personality-related difficulties where alliance-building and engagement require extended preparation
+       - Cases where the primary driver is systemic (family, societal) rather than cognitive-behavioural
+       - Severe trauma processing needs that require stabilisation before CBT techniques are introduced
+
+    2. Precautions when applying CBT:
+       - Risk of intellectualisation (client learns CBT concepts but avoids emotional processing)
+       - Need to pace cognitive restructuring to avoid overwhelming the client
+       - Importance of not invalidating the client's emotions while challenging thoughts
+       - Need for culturally adapted CBT when working with diverse populations
+       - Monitoring for homework non-compliance as a signal of engagement difficulties
+
+    3. Alternative frameworks that may be more appropriate:
+       - DBT when there is significant emotional dysregulation or self-harming behaviour
+       - ACT when there is high experiential avoidance and fusion with difficult thoughts/feelings
+       - Compassion-focused therapy (CFT) when there is high self-criticism or shame
+       - Schema therapy when there are pervasive, treatment-resistant core beliefs
+       - Psychodynamic therapy when the primary need is insight-oriented work
+       - Cognitive Processing Therapy (CPT) or PE for trauma-focused work
+       - Systemic therapy when family or relational dynamics are primary
+
+    4. General caveats:
+       - CBT is time-limited and structured; clients who prefer less structured approaches may not engage optimally
+       - CBT requires active collaboration and between-session homework; limited client motivation reduces effectiveness
+       - Not all problems have a clear cognitive-behavioural maintaining cycle; evidence-based case formulation is essential
+
+    IMPORTANT: Never assign diagnostic labels (e.g., "major depressive disorder", "generalised anxiety disorder"). Describe patterns, behaviours, and cognitive processes using descriptive clinical language only.
+
+    {{ case_text }}
+
+    List contraindications, precautions, alternative frameworks that
+    may be more appropriate, and general caveats.
+
+    Respond with valid JSON matching this schema exactly:
+    {{ output_schema }}
+
+    Return ONLY the JSON object. No markdown fences.
+    No explanatory text before or after.

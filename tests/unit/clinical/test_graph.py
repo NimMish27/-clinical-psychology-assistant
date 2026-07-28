@@ -330,6 +330,104 @@ class TestNodeResponseGeneration:
         assert "errors" in result
 
 
+class TestNodeFrameworkAnalysis:
+    @pytest.mark.asyncio
+    async def test_no_understanding_returns_error(self):
+        from clinical.graph.nodes import node_framework_analysis
+
+        state: GraphState = {"text": "test", "errors": {}}
+        result = await node_framework_analysis(state)
+        assert "errors" in result
+        assert "framework_analysis" in result["errors"]
+
+    @pytest.mark.asyncio
+    async def test_empty_applicable_returns_empty(self):
+        from clinical.graph.nodes import node_framework_analysis
+
+        mock_llm = MagicMock()
+        mock_llm.generate = AsyncMock(return_value="analysis")
+        mock_registry = MagicMock()
+        mock_registry.applicable_for.return_value = []
+
+        with (
+            patch("clinical.graph.nodes.get_llm_service", return_value=mock_llm),
+            patch("clinical.graph.nodes.FrameworkRegistry.get_instance", return_value=mock_registry),
+        ):
+            state: GraphState = {
+                "text": "test",
+                "understanding": _MOCK_UNDERSTANDING,
+                "errors": {},
+            }
+            result = await node_framework_analysis(state)
+            assert "framework_results" in result
+            assert result["framework_results"] == {}
+
+    @pytest.mark.asyncio
+    async def test_runs_applicable_plugins(self):
+        from clinical.graph.nodes import node_framework_analysis
+        from clinical.framework.models import FrameworkAnalysisResult
+
+        mock_plugin_cls = MagicMock()
+        mock_plugin = MagicMock()
+        mock_plugin.analyze = AsyncMock(return_value=FrameworkAnalysisResult(
+            slug="test_fw",
+            display_name="Test Framework",
+            guidance="Test guidance",
+            applicable=True,
+        ))
+        mock_plugin_cls.return_value = mock_plugin
+
+        mock_llm = MagicMock()
+        mock_llm.generate = AsyncMock(return_value="analysis")
+        mock_registry = MagicMock()
+        mock_registry.applicable_for.return_value = [("test_fw", mock_plugin_cls)]
+
+        with (
+            patch("clinical.graph.nodes.get_llm_service", return_value=mock_llm),
+            patch("clinical.graph.nodes.FrameworkRegistry.get_instance", return_value=mock_registry),
+        ):
+            state: GraphState = {
+                "text": "test",
+                "understanding": _MOCK_UNDERSTANDING,
+                "formulation": _MOCK_FORMULATION,
+                "evidence": _MOCK_EVIDENCE,
+                "errors": {},
+            }
+            result = await node_framework_analysis(state)
+            assert "framework_results" in result
+            assert "test_fw" in result["framework_results"]
+            assert result["framework_results"]["test_fw"].guidance == "Test guidance"
+
+    @pytest.mark.asyncio
+    async def test_plugin_failure_returns_error_result(self):
+        from clinical.graph.nodes import node_framework_analysis
+        from clinical.framework.models import FrameworkAnalysisResult
+
+        mock_plugin_cls = MagicMock()
+        mock_plugin = MagicMock()
+        mock_plugin.analyze = AsyncMock(side_effect=RuntimeError("Plugin crashed"))
+        mock_plugin_cls.return_value = mock_plugin
+
+        mock_llm = MagicMock()
+        mock_llm.generate = AsyncMock(return_value="analysis")
+        mock_registry = MagicMock()
+        mock_registry.applicable_for.return_value = [("broken", mock_plugin_cls)]
+
+        with (
+            patch("clinical.graph.nodes.get_llm_service", return_value=mock_llm),
+            patch("clinical.graph.nodes.FrameworkRegistry.get_instance", return_value=mock_registry),
+        ):
+            state: GraphState = {
+                "text": "test",
+                "understanding": _MOCK_UNDERSTANDING,
+                "errors": {},
+            }
+            result = await node_framework_analysis(state)
+            assert "framework_results" in result
+            assert "broken" in result["framework_results"]
+            assert result["framework_results"]["broken"].error is not None
+
+
 class TestNodeSafetyValidation:
     @pytest.mark.asyncio
     async def test_validates_clean_response(self):
@@ -443,6 +541,12 @@ class TestBuildGraph:
             revision_summary="",
         ))
 
+        mock_registry = MagicMock()
+        mock_registry.applicable_for.return_value = []
+
+        mock_llm = MagicMock()
+        mock_llm.generate = AsyncMock(return_value="Mocked LLM output")
+
         with (
             patch("clinical.graph.nodes._get_case_understanding", return_value=mock_extractor),
             patch("clinical.graph.nodes._get_query_generator", return_value=mock_gen),
@@ -453,6 +557,8 @@ class TestBuildGraph:
             patch("clinical.graph.nodes._get_therapeutic_planner", return_value=mock_planner),
             patch("clinical.graph.nodes._get_response_generator", return_value=mock_resp),
             patch("clinical.graph.nodes._get_safety_validator", return_value=mock_safety),
+            patch("clinical.graph.nodes.FrameworkRegistry.get_instance", return_value=mock_registry),
+            patch("clinical.graph.nodes.get_llm_service", return_value=mock_llm),
         ):
             from clinical.graph.graph import run_pipeline
 
@@ -464,6 +570,7 @@ class TestBuildGraph:
             assert "formulation" in result
             assert "plan" in result
             assert "safety_report" in result
+            assert "framework_results" in result
 
 
 class TestDeduplicate:

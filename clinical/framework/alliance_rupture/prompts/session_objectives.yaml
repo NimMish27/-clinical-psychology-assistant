@@ -1,0 +1,30 @@
+version: "1.0.0"
+description: "Alliance-Focused / Rupture Repair — define session objectives and goals"
+variables:
+  - name: system_header
+    description: "System prompt header identifying the framework"
+    required: true
+  - name: case_text
+    description: "Formatted case understanding, formulation, and evidence"
+    required: true
+  - name: output_schema
+    description: "JSON schema for the SessionObjectivesResult model"
+    required: true
+templates:
+  en: |
+    {{ system_header }}
+
+    As a Alliance-Focused / Rupture Repair practitioner, define session objectives.
+
+    Repair alliance ruptures, improve metacommunication skills, generalise relational learning to outside relationships
+
+    {{ case_text }}
+
+    Specify immediate objectives, short-term goals, long-term goals,
+    and observable progress indicators.
+
+    Respond with valid JSON matching this schema exactly:
+    {{ output_schema }}
+
+    Return ONLY the JSON object. No markdown fences.
+    No explanatory text before or after.

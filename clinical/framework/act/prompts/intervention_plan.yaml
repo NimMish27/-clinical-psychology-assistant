@@ -1,0 +1,87 @@
+version: "1.1.0"
+description: "Acceptance and Commitment Therapy — generate an intervention plan"
+variables:
+  - name: system_header
+    description: "System prompt header identifying the framework"
+    required: true
+  - name: case_text
+    description: "Formatted case understanding, formulation, and evidence"
+    required: true
+  - name: output_schema
+    description: "JSON schema for the InterventionPlanResult model"
+    required: true
+templates:
+  en: |
+    {{ system_header }}
+
+    As an Acceptance and Commitment Therapy practitioner, generate a detailed intervention plan.
+
+    Draw from the following ACT intervention techniques and match them to the case:
+
+    Acceptance and willingness interventions:
+    - "Creative hopelessness" — guided exploration of what the client has tried to control/avoid their pain and what it has cost them. Client comes to see that the control agenda is the problem, not the solution.
+    - "Man in the hole" metaphor — digging isn't working; the first step is to stop digging.
+    - "Tug of war with a monster" metaphor — the goal is not to win, but to drop the rope.
+    - "Two scales" metaphor — feeling better vs. living better.
+    - Willingness: helping the client choose to make room for difficult private experiences in service of valued living. Willingness is active, not passive.
+    - Body-based acceptance exercises: "just notice" the sensation, breathe into it, make space for it.
+
+    Defusion interventions:
+    - "I'm having the thought that..." — unhooking from thoughts by adding "I notice I'm having the thought that..." before the thought content.
+    - "Passengers on the bus" metaphor — the client drives the bus while thoughts (passengers) shout; the goal is to keep driving in the valued direction, not to silence the passengers.
+    - "Leaves on a stream" — visualising thoughts as leaves floating down a stream.
+    - "Thank your mind" — acknowledging that the mind is doing what minds do (generating stories, judgements, predictions) without buying into the content.
+    - Repeat the thought rapidly / sing the thought / say it in a funny voice.
+    - "I'm having the feeling of..." for emotions and sensations.
+    - Labeling the process: "Ah, there's 'I can't do it' story again."
+
+    Present-moment awareness:
+    - Mindful breathing: anchor attention to breath, notice when it wanders, gently return.
+    - "Just noticing" — describing present-moment experience without evaluation.
+    - Five senses grounding exercises.
+    - Mindful walking, eating, or routine activities.
+    - Observing thoughts and feelings as they arise without adding the struggle.
+
+    Self-as-context interventions:
+    - "The chessboard" metaphor — you are not the pieces (thoughts, feelings); you are the board that holds them all.
+    - "Sky and weather" metaphor — thoughts are weather passing through the sky; you are the sky, not the weather.
+    - The "observing self" exercise — noticing that there is a "you" that has been aware of all your different experiences across time.
+    - "This is what I notice right now" — structured noticing exercise.
+
+    Values clarification:
+    - Values card sort or values exploration interview.
+    - "What do you want your life to stand for?"
+    - "If you could have your life be about something, what would that be?"
+    - "What would you do if pain were no object?"
+    - "What matters to you in this area?" (relationships, work, health, leisure, community, spirituality).
+    - Distinguishing values (ongoing directions) from goals (achievable outcomes).
+    - "Values thermometer" — how important is this value? how successfully have you lived it?
+
+    Committed action:
+    - Behavioural commitment contracts specifying what, when, where, with whom.
+    - "What is one small step you could take this week that would move you in that valued direction?"
+    - Graded committed action: breaking values into achievable actions.
+    - Anticipating and planning for barriers (fusion, avoidance).
+    - "And if that shows up, what will you do then?"
+    - Willingness in service of committed action: "Are you willing to have that feeling while doing this thing that matters?"
+
+    Relapse prevention (ACT perspective):
+    - Slips and inflexibility are normal; the goal is pattern recognition, not symptom absence.
+    - Flexible response repertoire: when the client notices fusion/avoidance, they have alternatives.
+    - Building a life-wide committed action plan across multiple value domains.
+    - Ongoing practice of defusion and acceptance skills as life-long processes.
+
+    For each intervention specify: the specific technique (and its experiential rationale), how it will be introduced and practised in session, how the client can practise it between sessions, and how you will know if it is working.
+
+    IMPORTANT: Never assign diagnostic labels (e.g., "major depressive disorder", "generalised anxiety disorder"). Describe patterns, behaviours, and cognitive processes using descriptive clinical language only. Focus on function over form: describe what the behaviour does, not what it looks like.
+
+    {{ case_text }}
+
+    List specific interventions with technique and rationale.
+    Describe the provisional strategy, estimated duration, and expected outcomes.
+
+    Respond with valid JSON matching this schema exactly:
+    {{ output_schema }}
+
+    Return ONLY the JSON object. No markdown fences.
+    No explanatory text before or after.

@@ -1,0 +1,82 @@
+version: "1.1.0"
+description: "Person-Centred / Humanistic Therapy — describe limitations and contraindications"
+variables:
+  - name: system_header
+    description: "System prompt header identifying the framework"
+    required: true
+  - name: case_text
+    description: "Formatted case understanding, formulation, and evidence"
+    required: true
+  - name: output_schema
+    description: "JSON schema for the LimitationsResult model"
+    required: true
+templates:
+  en: |
+    {{ system_header }}
+
+    As a Person-Centred / Humanistic Therapy expert, describe limitations and contraindications.
+
+    **Situations where humanistic therapy may be less suitable:**
+
+    - **Severe and persistent distress**: When a client requires structured symptom
+      management (e.g., intense intrusive re-experiencing, disabling compulsive
+      behaviours, severe substance withdrawal). Humanistic therapy can complement
+      but may not be sufficient as a standalone approach.
+
+    - **High acute risk**: Active suicidal or self-harming behaviour requiring
+      crisis protocols and behavioural stabilisation before relational work
+
+    - **Cognitive or communication barriers**: Conditions that significantly limit
+      the client's capacity for self-reflection, verbal processing, or relational
+      contact (e.g., severe cognitive impairment, acute psychosis with loss of
+      reality testing, advanced dementia)
+
+    - **Mandated or involuntary treatment**: The non-directive, client-led stance
+      can be challenging when the client has not chosen therapy for themselves
+
+    - **Clear need for directive intervention**: Specific phobias where a structured
+      exposure protocol would be indicated, or very specific skill deficits requiring
+      psychoeducation and rehearsal
+
+    - **Litigation or disability assessment contexts**: Humanistic therapy's emphasis
+      on accepting all experience may conflict with the adversarial or evaluative
+      demands of these contexts
+
+    **Precautions:**
+    - Clients who are highly intellectualised may use humanistic concepts as a
+      form of avoidance rather than genuine contact with experience
+    - Cultural sensitivity is essential — the emphasis on individuality, autonomy,
+      and verbal expression may not align with all cultural backgrounds, where
+      interdependence and non-verbal processing may be primary
+    - Therapist self-care is vital: deep empathic attunement and relational
+      presence carries risk of empathy fatigue and vicarious distress
+    - Non-directive stance does not mean passive or inactive — it requires active,
+      engaged presence, which is emotionally demanding work
+    - Monitor for the client's need for structure; some clients benefit from
+      gradual introduction of more directive elements
+
+    **Alternative frameworks to consider:**
+    - **CBT**: structured, goal-oriented; useful when the client wants specific
+      symptom reduction or skills training alongside relational work
+    - **ACT**: process-based approach with explicit values and defusion work;
+      complementary to humanistic therapy, more structured than pure person-centred
+    - **DBT**: necessary when significant emotional dysregulation and self-harming
+      behaviour require structured skill-building and coaching
+    - **EMDR**: trauma-specific processing when there are identifiable traumatic
+      memories driving distress
+    - **Psychodynamic therapy**: when insight into unconscious processes and
+      early attachment patterns is a primary therapeutic goal
+    - **Systemic/family therapy**: when relationship or family dynamics are the
+      primary context for the client's distress
+
+    {{ case_text }}
+
+    Respond with valid JSON matching this schema exactly:
+    {{ output_schema }}
+
+    Never assign diagnostic labels such as "major depressive disorder", "GAD",
+    "PTSD", "OCD", "BPD", "ADHD", or any DSM/ICD category. Describe limitations
+    and alternatives using descriptive clinical and relational language.
+
+    Return ONLY the JSON object. No markdown fences.
+    No explanatory text before or after.

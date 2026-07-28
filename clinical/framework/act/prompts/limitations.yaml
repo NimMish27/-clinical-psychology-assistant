@@ -1,0 +1,63 @@
+version: "1.1.0"
+description: "Acceptance and Commitment Therapy — describe limitations and contraindications"
+variables:
+  - name: system_header
+    description: "System prompt header identifying the framework"
+    required: true
+  - name: case_text
+    description: "Formatted case understanding, formulation, and evidence"
+    required: true
+  - name: output_schema
+    description: "JSON schema for the LimitationsResult model"
+    required: true
+templates:
+  en: |
+    {{ system_header }}
+
+    As an Acceptance and Commitment Therapy expert, describe the limitations and contraindications of applying ACT to this case.
+
+    Consider these ACT-relevant limitation domains:
+
+    1. Contraindications and cautionary indicators:
+       - Active psychosis, current manic episode, or severe cognitive impairment that limits ability to engage with experiential or metaphorical exercises
+       - High acute suicide risk requiring crisis intervention before ACT (though ACT has protocols for suicidal ideation as a client control strategy)
+       - Clients who are unable to engage in abstract or metaphorical language (e.g., severe intellectual disability, some neurodevelopmental presentations)
+       - Cases requiring immediate crisis stabilisation, safety planning, or multi-disciplinary coordination before ACT processes can be engaged
+       - Clients who are mandated to treatment or otherwise not presenting voluntarily (ACT requires willing engagement)
+
+    2. Precautions when applying ACT:
+       - Risk of ACT being used as intellectual avoidance (client learns the language but does not make experiential contact with the processes)
+       - Not all cultural backgrounds respond to ACT metaphors equally; metaphors and exercises need cultural adaptation
+       - ACT can feel counterintuitive to clients expecting problem-solving, diagnosis, or direct symptom reduction approaches
+       - Therapeutic relationship is essential — ACT's experiential exercises require trust and safety
+       - Some clients may experience distress when making contact with avoided private experiences; the therapist must titrate exposure carefully
+       - ACT values work requires careful distinction between therapist values and client values
+
+    3. Alternative frameworks that may be more appropriate:
+       - CBT when the client prefers structured, psychoeducational, and symptom-focused work
+       - DBT when there is significant emotional dysregulation with self-harming behaviour and the structured skills-based approach of DBT is more appropriate
+       - Compassion-focused therapy (CFT) when shame and self-criticism are the primary barriers (though ACT can also address these)
+       - Exposure-based CBT for specific phobias or OCD where habituation protocols are well-established and the client prefers direct exposure
+       - Psychodynamic therapy when insight into unconscious processes and relational patterns is the primary need
+       - Systemic therapy when family or relational dynamics are the primary maintaining context
+       - Schema therapy when there are pervasive, rigid, early maladaptive schemas requiring longer-term reparative work
+
+    4. General caveats:
+       - ACT is less protocol-driven than some other approaches; therapist comfort with process-oriented work varies
+       - Research base is growing but ACT has fewer well-established treatment protocols for specific presentations than CBT for some conditions
+       - ACT emphasises acceptance rather than change; some clients and clinicians prefer change-oriented approaches
+       - ACT's philosophy of language and cognition (RFT) is complex; not all practitioners integrate it fully
+       - Symptom improvement is a by-product of increased psychological flexibility, not a direct target; clients seeking rapid symptom relief may become frustrated
+
+    IMPORTANT: Never assign diagnostic labels (e.g., "major depressive disorder", "generalised anxiety disorder"). Describe patterns, behaviours, and cognitive processes using descriptive clinical language only.
+
+    {{ case_text }}
+
+    List contraindications, precautions, alternative frameworks that
+    may be more appropriate, and general caveats.
+
+    Respond with valid JSON matching this schema exactly:
+    {{ output_schema }}
+
+    Return ONLY the JSON object. No markdown fences.
+    No explanatory text before or after.

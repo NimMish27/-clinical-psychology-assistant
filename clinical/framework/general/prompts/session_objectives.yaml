@@ -1,0 +1,30 @@
+version: "1.0.0"
+description: "General Psychotherapy — define session objectives and goals"
+variables:
+  - name: system_header
+    description: "System prompt header identifying the framework"
+    required: true
+  - name: case_text
+    description: "Formatted case understanding, formulation, and evidence"
+    required: true
+  - name: output_schema
+    description: "JSON schema for the SessionObjectivesResult model"
+    required: true
+templates:
+  en: |
+    {{ system_header }}
+
+    As a General Psychotherapy practitioner, define session objectives.
+
+    Establish therapeutic alliance, reduce symptoms, improve functioning, enhance coping, prevent relapse
+
+    {{ case_text }}
+
+    Specify immediate objectives, short-term goals, long-term goals,
+    and observable progress indicators.
+
+    Respond with valid JSON matching this schema exactly:
+    {{ output_schema }}
+
+    Return ONLY the JSON object. No markdown fences.
+    No explanatory text before or after.
