@@ -1,12 +1,14 @@
 from __future__ import annotations
 
-import time
-import traceback
 from typing import Any
 
 from clinical.case_understanding import CaseUnderstandingExtractor
 from clinical.evidence_synthesis import EvidenceSynthesizer
 from clinical.formulation import ClinicalFormulator
+from clinical.frameworks.comparator import FrameworkComparisonEngine
+from clinical.frameworks.models import FrameworkContext
+from clinical.frameworks.registry import get_framework_registry
+from clinical.frameworks.router import ParallelFrameworkRouter
 from clinical.graph.state import GraphState
 from clinical.llm import LLMService, get_llm_service
 from clinical.missing_info import MissingInfoDetector
@@ -193,6 +195,64 @@ async def node_evidence_synthesis(state: GraphState) -> dict[str, Any]:
         return {"errors": {"evidence_synthesis": f"{exc}"}}
 
 
+async def node_framework_analysis(state: GraphState) -> dict[str, Any]:
+    """Run all registered therapeutic frameworks in parallel."""
+    understanding = state.get("understanding")
+    if not understanding:
+        return {
+            "errors": {
+                "framework_analysis": (
+                    "No case understanding available for framework analysis"
+                ),
+            },
+        }
+
+    try:
+        registry = get_framework_registry()
+        enabled = state.get("enabled_frameworks")
+        frameworks = registry.get_enabled(enabled)
+        if not frameworks:
+            _log.info("graph.framework_analysis.no_frameworks")
+            return {"framework_results": {}}
+
+        llm = get_llm_service()
+        context = FrameworkContext(
+            understanding=understanding,
+            evidence=state.get("evidence"),
+            raw_text=state.get("text", ""),
+            retrieved_chunks=state.get("retrieved_chunks", []),
+            session_id=state.get("session_id"),
+            llm=llm,
+        )
+
+        router = ParallelFrameworkRouter()
+        results = await router.route(frameworks, context)
+        _log.info(
+            "graph.framework_analysis.complete",
+            count=len(results),
+            frameworks=list(results.keys()),
+        )
+        return {"framework_results": results}
+    except Exception as exc:
+        _log.error("graph.framework_analysis_failed", error=str(exc))
+        return {"errors": {"framework_analysis": f"{exc}"}}
+
+
+async def node_framework_comparison(state: GraphState) -> dict[str, Any]:
+    """Compare outputs from all frameworks and produce a comparison table."""
+    results = state.get("framework_results")
+    if not results:
+        return {"errors": {"framework_comparison": "No framework results to compare"}}
+
+    try:
+        comparator = FrameworkComparisonEngine()
+        comparison = comparator.compare(results)
+        return {"framework_comparison": comparison}
+    except Exception as exc:
+        _log.error("graph.framework_comparison_failed", error=str(exc))
+        return {"errors": {"framework_comparison": f"{exc}"}}
+
+
 async def node_clinical_formulation(state: GraphState) -> dict[str, Any]:
     """Generate clinical formulation from understanding and evidence."""
     understanding = state.get("understanding")
@@ -351,6 +411,23 @@ async def node_response_generation(state: GraphState) -> dict[str, Any]:
             references=refs or None,
             caution=caution_text,
         )
+
+        # Append framework comparison section if available
+        comparison = state.get("framework_comparison")
+        framework_results = state.get("framework_results")
+        if comparison and framework_results:
+            comparator = FrameworkComparisonEngine()
+            fw_section = comparator.to_comparison_markdown(comparison, framework_results)
+            if fw_section:
+                new_markdown = result.markdown.rstrip() + "\n\n" + fw_section
+                sections = result.sections_generated + 1
+                from clinical.response_generation.models import ClinicalResponseResult
+                result = ClinicalResponseResult(
+                    markdown=new_markdown,
+                    sections_generated=sections,
+                    confidence=result.confidence,
+                )
+
         return {"response": result}
     except Exception as exc:
         _log.error("graph.response_generation_failed", error=str(exc))

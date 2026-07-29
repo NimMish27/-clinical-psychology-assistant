@@ -284,6 +284,10 @@ class ClinicalAnalyzeResponse(BaseModel):
         default_factory=dict,
         description="Evidence synthesis result",
     )
+    framework_comparison: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Multi-framework comparison result with side-by-side analysis",
+    )
     formulation: dict[str, Any] = Field(
         default_factory=dict,
         description="Clinical formulation result",

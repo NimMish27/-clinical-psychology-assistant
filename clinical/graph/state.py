@@ -7,6 +7,7 @@ from typing_extensions import TypedDict
 from clinical.case_understanding.models import CaseUnderstandingResult
 from clinical.evidence_synthesis.models import EvidenceSynthesisResult
 from clinical.formulation.models import ClinicalFormulationResult
+from clinical.frameworks.models import FrameworkComparisonResult, FrameworkResult
 from clinical.missing_info.models import MissingInfoResult
 from clinical.query_generation.models import QueryGenerationResult
 from clinical.response_generation.models import ClinicalResponseResult
@@ -34,12 +35,16 @@ class GraphState(TypedDict, total=False):
     # ── Input ────────────────────────────────────────────────
     text: str
     session_id: Optional[str]
+    enabled_frameworks: Optional[list[str]]
+    selected_framework: Optional[str]
 
     # ── Module outputs (set by nodes, consumed by downstream) ─
     understanding: Optional[CaseUnderstandingResult]
     queries_result: Optional[QueryGenerationResult]
     retrieved_chunks: Optional[list[RetrievedChunk]]
     evidence: Optional[EvidenceSynthesisResult]
+    framework_results: Optional[dict[str, FrameworkResult]]
+    framework_comparison: Optional[FrameworkComparisonResult]
     formulation: Optional[ClinicalFormulationResult]
     missing_info: Optional[MissingInfoResult]
     plan: Optional[TherapeuticPlanResult]

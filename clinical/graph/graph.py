@@ -8,6 +8,8 @@ from clinical.graph.nodes import (
     node_case_understanding,
     node_clinical_formulation,
     node_evidence_synthesis,
+    node_framework_analysis,
+    node_framework_comparison,
     node_missing_info,
     node_query_generation,
     node_response_generation,
@@ -25,6 +27,8 @@ _NODE_NAMES: dict[str, str] = {
     node_query_generation.__name__: "query_generation",
     node_retrieval.__name__: "retrieval",
     node_evidence_synthesis.__name__: "evidence_synthesis",
+    node_framework_analysis.__name__: "framework_analysis",
+    node_framework_comparison.__name__: "framework_comparison",
     node_clinical_formulation.__name__: "clinical_formulation",
     node_missing_info.__name__: "missing_info",
     node_therapeutic_planning.__name__: "therapeutic_planning",
@@ -32,23 +36,14 @@ _NODE_NAMES: dict[str, str] = {
     node_safety_validation.__name__: "safety_validation",
 }
 
-SEQUENCE = [
-    "case_understanding",
-    "query_generation",
-    "retrieval",
-    "evidence_synthesis",
-    "clinical_formulation",
-    "missing_info",
-    "therapeutic_planning",
-    "response_generation",
-]
-
 
 SEQUENCE = [
     "case_understanding",
     "query_generation",
     "retrieval",
     "evidence_synthesis",
+    "framework_analysis",
+    "framework_comparison",
     "clinical_formulation",
     "missing_info",
     "therapeutic_planning",
@@ -81,6 +76,8 @@ def build_graph() -> StateGraph:
     builder.add_node(_tag("query_generation"), node_query_generation)
     builder.add_node(_tag("retrieval"), node_retrieval)
     builder.add_node(_tag("evidence_synthesis"), node_evidence_synthesis)
+    builder.add_node(_tag("framework_analysis"), node_framework_analysis)
+    builder.add_node(_tag("framework_comparison"), node_framework_comparison)
     builder.add_node(_tag("clinical_formulation"), node_clinical_formulation)
     builder.add_node(_tag("missing_info"), node_missing_info)
     builder.add_node(_tag("therapeutic_planning"), node_therapeutic_planning)

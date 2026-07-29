@@ -108,6 +108,7 @@ async def clinical_analyze(
         understanding=_model_dump(state.get("understanding")),
         queries=_model_dump(state.get("queries_result")).get("queries", []),
         evidence=_model_dump(state.get("evidence")),
+        framework_comparison=_model_dump(state.get("framework_comparison")),
         formulation=_model_dump(state.get("formulation")),
         missing_info=_model_dump(state.get("missing_info")),
         therapeutic_planning=_model_dump(state.get("plan")),
