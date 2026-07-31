@@ -5,8 +5,8 @@ import time
 from abc import ABC, abstractmethod
 from typing import Any
 
-from clinical.frameworks.models import FrameworkContext, FrameworkResult
 from app_logging.logger import get_logger
+from clinical.frameworks.models import FrameworkContext, FrameworkMetadata, FrameworkResult
 
 _log = get_logger(__name__)
 
@@ -45,6 +45,22 @@ class BaseFramework(ABC):
     @abstractmethod
     def system_prompt(self) -> str:
         """Framework-specific LLM system prompt that defines the analytical lens."""
+
+    @property
+    def metadata(self) -> FrameworkMetadata:
+        """Framework-level metadata for discovery and evaluation.
+
+        Default implementation derives ``id``, ``display_name``, and
+        ``description`` from the framework's own properties, so every
+        registered framework exposes metadata out of the box. Subclasses
+        may override to provide richer metadata (version, features, use
+        cases, benchmark categories).
+        """
+        return FrameworkMetadata(
+            id=self.name,
+            display_name=self.name,
+            description=self.description,
+        )
 
     @abstractmethod
     async def analyze(

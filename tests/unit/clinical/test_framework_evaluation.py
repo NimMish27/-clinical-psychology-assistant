@@ -384,7 +384,7 @@ async def test_evaluate_frameworks_valid_run():
 
     assert len(report.results) == 1
     case_result = report.results[0]
-    assert set(case_result.frameworks.keys()) == {"CBT", "ACT", "Humanistic"}
+    assert set(case_result.frameworks.keys()) == {"CBT", "ACT", "DBT", "Humanistic"}
 
     for fw_out in case_result.frameworks.values():
         assert fw_out.validation.valid is True
@@ -464,7 +464,7 @@ async def test_report_aggregation():
     report = await evaluate_frameworks(cases=[_benchmark_case()], llm=llm)
 
     aggregates = report.framework_aggregates()
-    assert set(aggregates.keys()) == {"CBT", "ACT", "Humanistic"}
+    assert set(aggregates.keys()) == {"CBT", "ACT", "DBT", "Humanistic"}
     for fw_agg in aggregates.values():
         assert "safety" in fw_agg
         assert fw_agg["safety"]["mean"] > 0.0
@@ -488,7 +488,8 @@ async def test_format_json_framework_report():
     llm = FakeLLM(default=_valid_raw())
     report = await evaluate_frameworks(cases=[_benchmark_case()], llm=llm)
     payload = format_json_framework_report(report)
-    assert set(payload["framework_names"]) == {"CBT", "ACT", "Humanistic"}
+    assert set(payload["framework_names"]) == {"CBT", "ACT", "DBT", "Humanistic"}
+    assert payload["framework_metadata"]["DBT"]["supported_features"]
     assert len(payload["cases"]) == 1
     assert "safety" in payload["cases"][0]["frameworks"]["CBT"]["metrics"]
 

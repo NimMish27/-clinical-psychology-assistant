@@ -187,6 +187,9 @@ async def evaluate_frameworks(
     report = FrameworkEvaluationReport(
         cases=cases,
         framework_names=[fw.name for fw in fws],
+        framework_metadata={
+            fw.name: fw.metadata.model_dump() for fw in fws
+        },
     )
 
     for case in cases:

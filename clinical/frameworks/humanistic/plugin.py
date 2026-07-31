@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from clinical.frameworks.base import BaseFramework
-from clinical.frameworks.models import FrameworkContext, FrameworkResult
+from clinical.frameworks.models import FrameworkContext, FrameworkMetadata, FrameworkResult
 
 _SYSTEM_PROMPT = """\
 You are a senior Humanistic / Experiential practitioner advising a clinical \
@@ -87,6 +87,36 @@ class HumanisticFramework(BaseFramework):
     @property
     def system_prompt(self) -> str:
         return _SYSTEM_PROMPT
+
+    @property
+    def metadata(self) -> FrameworkMetadata:
+        return FrameworkMetadata(
+            id="humanistic",
+            display_name="Humanistic / Experiential Therapy",
+            description=self.description,
+            version="1.0.0",
+            supported_features=[
+                "person-centred therapy",
+                "gestalt dialogue and two-chair work",
+                "existential exploration",
+                "empathic reflection",
+                "meaning-making",
+            ],
+            primary_use_cases=[
+                "self-worth and self-acceptance",
+                "incongruence and conditions of worth",
+                "existential concerns",
+                "relationship difficulties",
+                "identity and meaning",
+            ],
+            benchmark_categories=[
+                "relationship-difficulties",
+                "perfectionism",
+                "depression-like",
+                "burnout",
+                "emotional-dysregulation",
+            ],
+        )
 
     async def analyze(self, context: FrameworkContext) -> FrameworkResult:
         return await self._run_analysis(context)

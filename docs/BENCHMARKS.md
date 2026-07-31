@@ -94,6 +94,9 @@ cases via `get_all_cases()`.
   (e.g. `"Borkovec et al. (2004)"`) so inline-citation matching is reliable.
 - **Per-framework `differentiation_notes`**: describe the lens each framework
   is expected to adopt; these are human-readable context for the diversity
-  findings, not scored programmatically.
+  findings, not scored programmatically. Every case includes notes for CBT,
+  ACT, DBT, and Humanistic (DBT emphasises emotion regulation, distress
+  tolerance, mindfulness, interpersonal effectiveness, behavioural chain
+  analysis, and validation).
 - **Realistic `clinical_text`**: at least a few sentences of context — the
   frameworks receive this text directly as `raw_text`.

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from clinical.frameworks.base import BaseFramework
-from clinical.frameworks.models import FrameworkContext, FrameworkResult
+from clinical.frameworks.models import FrameworkContext, FrameworkMetadata, FrameworkResult
 
 _SYSTEM_PROMPT = """\
 You are a senior CBT (Cognitive Behavioural Therapy) practitioner advising \
@@ -83,6 +83,37 @@ class CBTFramework(BaseFramework):
     @property
     def system_prompt(self) -> str:
         return _SYSTEM_PROMPT
+
+    @property
+    def metadata(self) -> FrameworkMetadata:
+        return FrameworkMetadata(
+            id="cbt",
+            display_name="Cognitive Behavioural Therapy",
+            description=self.description,
+            version="1.0.0",
+            supported_features=[
+                "cognitive restructuring",
+                "behavioural activation",
+                "graded exposure",
+                "thought records",
+                "behavioural experiments",
+                "activity scheduling",
+            ],
+            primary_use_cases=[
+                "anxiety and worry",
+                "low mood",
+                "perfectionism and self-criticism",
+                "academic and workplace stress",
+            ],
+            benchmark_categories=[
+                "anxiety",
+                "depression-like",
+                "academic-stress",
+                "perfectionism",
+                "workplace-stress",
+                "burnout",
+            ],
+        )
 
     async def analyze(self, context: FrameworkContext) -> FrameworkResult:
         return await self._run_analysis(context)

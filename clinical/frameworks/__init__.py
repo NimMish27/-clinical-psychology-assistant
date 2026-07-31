@@ -4,6 +4,7 @@ from clinical.frameworks.models import (
     FrameworkComparisonResult,
     FrameworkComparisonRow,
     FrameworkContext,
+    FrameworkMetadata,
     FrameworkResult,
 )
 from clinical.frameworks.registry import FrameworkRegistry, get_framework_registry
@@ -15,6 +16,7 @@ __all__ = [
     "FrameworkComparisonResult",
     "FrameworkComparisonRow",
     "FrameworkContext",
+    "FrameworkMetadata",
     "FrameworkRegistry",
     "FrameworkResult",
     "ParallelFrameworkRouter",

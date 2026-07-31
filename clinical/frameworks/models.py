@@ -96,6 +96,42 @@ class FrameworkResult(BaseModel):
     model_config = {"frozen": True}
 
 
+class FrameworkMetadata(BaseModel):
+    """Framework-level metadata for discovery, selection, and evaluation.
+
+    Reusable by the framework evaluation harness, the comparison engine,
+    a future frontend, and human-in-the-loop framework selection. The
+    registry exposes this via ``get_metadata()`` / ``list_metadata()``.
+    """
+
+    id: str = Field(
+        ..., min_length=1, description="Stable machine-readable identifier",
+    )
+    display_name: str = Field(
+        ..., min_length=1, description="Human-readable framework name",
+    )
+    description: str = Field(
+        ..., min_length=10, description="One-sentence description of the framework",
+    )
+    version: str = Field(
+        default="0.1.0", description="Plugin version (semver)",
+    )
+    supported_features: list[str] = Field(
+        default_factory=list,
+        description="Capabilities or techniques this framework supports",
+    )
+    primary_use_cases: list[str] = Field(
+        default_factory=list,
+        description="Presentations or client groups this framework suits best",
+    )
+    benchmark_categories: list[str] = Field(
+        default_factory=list,
+        description="Benchmark case categories this framework is expected to apply to",
+    )
+
+    model_config = {"frozen": True}
+
+
 class FrameworkComparisonRow(BaseModel):
     dimension: str = Field(
         ..., min_length=3,

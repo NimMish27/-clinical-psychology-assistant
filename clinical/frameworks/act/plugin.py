@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from clinical.frameworks.base import BaseFramework
-from clinical.frameworks.models import FrameworkContext, FrameworkResult
+from clinical.frameworks.models import FrameworkContext, FrameworkMetadata, FrameworkResult
 
 _SYSTEM_PROMPT = """\
 You are a senior ACT (Acceptance and Commitment Therapy) practitioner \
@@ -83,6 +83,38 @@ class ACTFramework(BaseFramework):
     @property
     def system_prompt(self) -> str:
         return _SYSTEM_PROMPT
+
+    @property
+    def metadata(self) -> FrameworkMetadata:
+        return FrameworkMetadata(
+            id="act",
+            display_name="Acceptance and Commitment Therapy",
+            description=self.description,
+            version="1.0.0",
+            supported_features=[
+                "acceptance",
+                "cognitive defusion",
+                "mindfulness / present-moment awareness",
+                "values clarification",
+                "committed action",
+                "self-as-context",
+            ],
+            primary_use_cases=[
+                "psychological inflexibility",
+                "experiential avoidance",
+                "chronic stress and burnout",
+                "values-work conflict",
+                "transdiagnostic presentations",
+            ],
+            benchmark_categories=[
+                "burnout",
+                "anxiety",
+                "depression-like",
+                "workplace-stress",
+                "academic-stress",
+                "perfectionism",
+            ],
+        )
 
     async def analyze(self, context: FrameworkContext) -> FrameworkResult:
         return await self._run_analysis(context)

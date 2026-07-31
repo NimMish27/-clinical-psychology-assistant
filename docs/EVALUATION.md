@@ -1,7 +1,7 @@
 # Framework Evaluation Harness
 
 The Framework Evaluation Harness evaluates the quality and consistency of
-the therapeutic framework plugins (CBT, ACT, Humanistic) across the
+the therapeutic framework plugins (CBT, ACT, DBT, Humanistic) across the
 [benchmark case set](BENCHMARKS.md). It is **framework-level** evaluation:
 it exercises the plugins directly and scores their outputs, independent of
 the full LangGraph pipeline (which is covered by the separate pipeline
@@ -61,6 +61,12 @@ asyncio.run(main())
 | `llm`              | shared `LLMService`        | Inject a stub/recording LLM in tests |
 | `metrics`          | structural + clinical set  | Override per-framework metrics       |
 | `case_level_metrics` | `[FrameworkDiversityMetric]` | Override case-level metrics        |
+
+Each report also carries `framework_metadata` (from the registry), exposing
+`id`, `display_name`, `description`, `version`, `supported_features`,
+`primary_use_cases`, and `benchmark_categories` for every evaluated
+framework — reusable by a future frontend, the comparison engine, and
+human-in-the-loop framework selection.
 
 ## Fail-Fast Preconditions
 

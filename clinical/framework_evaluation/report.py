@@ -47,6 +47,7 @@ class FrameworkEvaluationReport:
 
     cases: list[BenchmarkCase] = field(default_factory=lambda: get_all_cases())
     framework_names: list[str] = field(default_factory=list)
+    framework_metadata: dict[str, dict[str, Any]] = field(default_factory=dict)
     results: list[FrameworkCaseResult] = field(default_factory=list)
 
     def get_case(self, case_id: str) -> FrameworkCaseResult | None:
@@ -215,6 +216,7 @@ def format_json_framework_report(report: FrameworkEvaluationReport) -> dict[str,
 
     return {
         "framework_names": report.framework_names,
+        "framework_metadata": report.framework_metadata,
         "framework_aggregates": report.framework_aggregates(),
         "case_level_aggregates": report.case_level_aggregates(),
         "cases": cases_payload,

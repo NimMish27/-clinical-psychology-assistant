@@ -269,7 +269,7 @@ class FrameworkDiversityMetric(BaseFrameworkMetric):
 
     @staticmethod
     def _tokenize(text: str) -> list[str]:
-        return [w for w in re.findall(r"[a-z]{2,}", text.lower())]
+        return re.findall(r"[a-z]{2,}", text.lower())
 
     @classmethod
     def _tfidf_vectors(

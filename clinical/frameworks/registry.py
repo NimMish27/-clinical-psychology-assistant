@@ -4,7 +4,9 @@ from app_logging.logger import get_logger
 from clinical.frameworks.act.plugin import ACTFramework
 from clinical.frameworks.base import BaseFramework
 from clinical.frameworks.cbt.plugin import CBTFramework
+from clinical.frameworks.dbt.plugin import DBTFramework
 from clinical.frameworks.humanistic.plugin import HumanisticFramework
+from clinical.frameworks.models import FrameworkMetadata
 
 _log = get_logger(__name__)
 
@@ -61,6 +63,22 @@ class FrameworkRegistry:
             ]
         return list(self._frameworks.values())
 
+    def get_metadata(self, name: str) -> FrameworkMetadata | None:
+        """Return metadata for a registered framework by name, or None."""
+        fw = self._frameworks.get(name)
+        return fw.metadata if fw else None
+
+    def list_metadata(
+        self,
+        enabled_names: list[str] | None = None,
+    ) -> list[FrameworkMetadata]:
+        """Return metadata for all (optionally filtered) frameworks.
+
+        Useful for the evaluation harness, a future frontend, the
+        comparison engine, and human-in-the-loop framework selection.
+        """
+        return [fw.metadata for fw in self.get_enabled(enabled_names)]
+
 
 # ── Module-level singleton ─────────────────────────────────────
 
@@ -71,7 +89,7 @@ def get_framework_registry() -> FrameworkRegistry:
     """Return the singleton FrameworkRegistry, creating it if needed.
 
     On first call, automatically registers the built-in frameworks
-    (CBT, ACT, Humanistic).  Additional frameworks can be registered
+    (CBT, ACT, DBT, Humanistic).  Additional frameworks can be registered
     later via ``get_framework_registry().register(...)``.
     """
     global _registry
@@ -79,5 +97,6 @@ def get_framework_registry() -> FrameworkRegistry:
         _registry = FrameworkRegistry()
         _registry.register(CBTFramework())
         _registry.register(ACTFramework())
+        _registry.register(DBTFramework())
         _registry.register(HumanisticFramework())
     return _registry
