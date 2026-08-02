@@ -248,3 +248,68 @@ Cognitive-behavioural therapy is effective for anxiety disorders (Smith et al., 
         result = await validator.validate(markdown)
         missing = [i for i in result.issues if i.category == SafetyIssueCategory.MISSING_CITATION]
         assert len(missing) == 0
+
+
+class TestReportedDiagnosisRule:
+    async def test_confirmed_reported_diagnosis_flagged(self):
+        markdown = """## 1. CASE SUMMARY
+
+The client was diagnosed with Major Depressive Disorder. Treatment planning
+should account for this confirmed condition.
+"""
+        validator = SafetyValidator()
+        result = await validator.validate(
+            markdown,
+            reported_diagnosis="reported diagnosis of Major Depressive Disorder",
+        )
+        confirmed = [
+            i for i in result.issues
+            if i.category == SafetyIssueCategory.REPORTED_DIAGNOSIS_CONFIRMED
+        ]
+        assert len(confirmed) == 1
+        # The note clarifying the reported status must be appended on revision.
+        assert "has not been independently validated" in result.markdown
+        assert result.was_revised is True
+
+    async def test_reported_diagnosis_presented_as_reported_not_flagged(self):
+        markdown = """## 1. CASE SUMMARY
+
+The client reports a diagnosis of major depressive disorder. This has not
+been independently validated.
+"""
+        validator = SafetyValidator()
+        result = await validator.validate(
+            markdown,
+            reported_diagnosis="Major Depressive Disorder",
+        )
+        confirmed = [
+            i for i in result.issues
+            if i.category == SafetyIssueCategory.REPORTED_DIAGNOSIS_CONFIRMED
+        ]
+        assert len(confirmed) == 0
+
+    async def test_no_reported_diagnosis_returns_clean(self):
+        markdown = """## 1. CASE SUMMARY
+
+The client presents with features consistent with a mood-related difficulty.
+"""
+        validator = SafetyValidator()
+        result = await validator.validate(markdown)
+        assert len(result.issues) == 0
+
+    async def test_note_not_duplicated_on_repeated_validation(self):
+        markdown = """## 1. CASE SUMMARY
+
+The client was diagnosed with Generalised Anxiety Disorder.
+"""
+        validator = SafetyValidator()
+        first = await validator.validate(
+            markdown,
+            reported_diagnosis="Generalised Anxiety Disorder",
+        )
+        second = await validator.validate(
+            first.markdown,
+            reported_diagnosis="Generalised Anxiety Disorder",
+        )
+        assert first.markdown.count("> **Reported diagnosis**") == 1
+        assert second.markdown.count("> **Reported diagnosis**") == 1

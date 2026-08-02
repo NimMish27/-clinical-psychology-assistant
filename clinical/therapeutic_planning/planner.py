@@ -214,6 +214,7 @@ class TherapeuticPlanner:
         caution: str | None = None,
         key_findings: list[str] | None = None,
         evidence_themes: list[str] | None = None,
+        framework_lens: str | None = None,
     ) -> TherapeuticPlanResult:
         """Generate a therapeutic plan from formulation and evidence.
 
@@ -231,6 +232,9 @@ class TherapeuticPlanner:
             caution:           Caution note from formulation.
             key_findings:      Key findings from evidence synthesis.
             evidence_themes:   Common themes from evidence synthesis.
+            framework_lens:    Optional formatted description of the selected
+                               therapeutic framework's analysis, used to anchor
+                               the plan in that framework's lens.
 
         Returns:
             TherapeuticPlanResult with structured plan sections.
@@ -249,6 +253,8 @@ class TherapeuticPlanner:
             key_findings=key_findings,
             evidence_themes=evidence_themes,
         )
+        if framework_lens:
+            prompt += f"\n## Selected Framework Lens\n{framework_lens}\n"
 
         if not self._has_content(prompt):
             _log.warning("therapeutic_planning.empty_input")

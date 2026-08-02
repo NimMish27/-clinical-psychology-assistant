@@ -7,6 +7,22 @@ import pytest
 from clinical.graph.state import GraphState, _merge_errors
 
 
+def _fw_result(name: str, confidence: float = 0.7):
+    from clinical.frameworks.models import FrameworkResult
+
+    return FrameworkResult(
+        framework_name=name,
+        framework_description=f"{name} framework for this case",
+        conceptualization=f"Conceptualisation through the {name} lens",
+        key_concepts=[f"{name} core concept"],
+        therapeutic_approaches=[f"{name} technique"],
+        strengths=["Fit for this presentation"],
+        limitations=["Needs more data"],
+        confidence=confidence,
+        evidence_alignment="Aligns with retrieved evidence",
+    )
+
+
 class TestGraphState:
     def test_initial_state(self):
         state: GraphState = {
@@ -307,6 +323,111 @@ class TestNodeTherapeuticPlanning:
         assert "errors" in result
 
 
+class TestFrameworkAwareNodes:
+    @pytest.mark.asyncio
+    async def test_formulation_receives_selected_framework_lens(self):
+        from clinical.graph.nodes import _framework_lens_text, node_clinical_formulation
+
+        mock_form = MagicMock()
+        mock_form.formulate = AsyncMock(return_value=_MOCK_FORMULATION)
+        selected_result = _fw_result("DBT", confidence=0.8)
+        with patch("clinical.graph.nodes._get_formulator", return_value=mock_form):
+            state = dict(_BASE_STATE)
+            state["errors"] = {}
+            state["selected_framework"] = "DBT"
+            state["framework_results"] = {
+                "CBT": _fw_result("CBT", confidence=0.6),
+                "DBT": selected_result,
+            }
+            await node_clinical_formulation(state)
+            kwargs = mock_form.formulate.await_args.kwargs
+            assert kwargs["framework_lens"] is not None
+            assert "DBT" in kwargs["framework_lens"]
+
+    @pytest.mark.asyncio
+    async def test_formulation_legacy_without_framework_passes_none(self):
+        from clinical.graph.nodes import node_clinical_formulation
+
+        mock_form = MagicMock()
+        mock_form.formulate = AsyncMock(return_value=_MOCK_FORMULATION)
+        with patch("clinical.graph.nodes._get_formulator", return_value=mock_form):
+            state = dict(_BASE_STATE)
+            state["errors"] = {}
+            await node_clinical_formulation(state)
+            assert mock_form.formulate.await_args.kwargs["framework_lens"] is None
+
+    @pytest.mark.asyncio
+    async def test_therapeutic_planning_receives_framework_lens(self):
+        from clinical.graph.nodes import node_therapeutic_planning
+
+        mock_planner = MagicMock()
+        mock_planner.plan = AsyncMock(return_value=_MOCK_PLAN)
+        with patch("clinical.graph.nodes._get_therapeutic_planner", return_value=mock_planner):
+            state = dict(_BASE_STATE)
+            state["errors"] = {}
+            state["selected_framework"] = "DBT"
+            state["framework_results"] = {
+                "CBT": _fw_result("CBT", confidence=0.6),
+                "DBT": _fw_result("DBT", confidence=0.8),
+            }
+            await node_therapeutic_planning(state)
+            kwargs = mock_planner.plan.await_args.kwargs
+            assert kwargs["framework_lens"] is not None
+            assert "DBT" in kwargs["framework_lens"]
+
+    def test_framework_lens_none_without_selection(self):
+        from clinical.graph.nodes import _framework_lens_text
+
+        assert _framework_lens_text({"errors": {}}) is None
+
+    def test_framework_lens_none_when_result_missing(self):
+        from clinical.graph.nodes import _framework_lens_text
+
+        state = {"selected_framework": "NOPE", "framework_results": {}, "errors": {}}
+        assert _framework_lens_text(state) is None
+
+    def test_framework_lens_formats_selected_result(self):
+        from clinical.graph.nodes import _framework_lens_text
+
+        res = _fw_result("CBT", confidence=0.7)
+        state = {"selected_framework": "CBT", "framework_results": {"CBT": res}, "errors": {}}
+        text = _framework_lens_text(state)
+        assert text is not None
+        assert "CBT" in text
+        assert res.conceptualization in text
+
+
+class TestFrameworkAnalysisContext:
+    @pytest.mark.asyncio
+    async def test_reported_diagnosis_and_metadata_passed_to_context(self):
+        from clinical.graph.nodes import node_framework_analysis
+
+        router = MagicMock()
+        router.route = AsyncMock(return_value={"CBT": _fw_result("CBT")})
+        captured: dict = {}
+
+        original_router = None
+        with (
+            patch("clinical.graph.nodes.get_framework_registry") as mock_registry,
+            patch("clinical.graph.nodes.ParallelFrameworkRouter", return_value=router),
+        ):
+            registry = MagicMock()
+            registry.get_enabled.return_value = [MagicMock(name="CBT")]
+            mock_registry.return_value = registry
+            state = {
+                "text": "case",
+                "understanding": _MOCK_UNDERSTANDING,
+                "reported_diagnosis": "Major Depressive Disorder",
+                "patient_metadata": {"age": 34, "gender": "female"},
+                "errors": {},
+            }
+            await node_framework_analysis(state)
+
+        context = router.route.await_args.args[1]
+        assert context.extra["reported_diagnosis"] == "Major Depressive Disorder"
+        assert context.extra["patient_metadata"] == {"age": 34, "gender": "female"}
+
+
 class TestNodeResponseGeneration:
     @pytest.mark.asyncio
     async def test_generates_response(self):
@@ -431,6 +552,8 @@ class TestBuildGraph:
         mock_det.detect = AsyncMock(return_value=_MOCK_MISSING_INFO)
         mock_planner = MagicMock()
         mock_planner.plan = AsyncMock(return_value=_MOCK_PLAN)
+        mock_session_planner = MagicMock()
+        mock_session_planner.plan = AsyncMock(return_value=MagicMock())
         mock_resp = MagicMock()
         mock_resp.generate = AsyncMock(return_value=_MOCK_RESPONSE)
 
@@ -451,6 +574,7 @@ class TestBuildGraph:
             patch("clinical.graph.nodes._get_formulator", return_value=mock_form),
             patch("clinical.graph.nodes._get_missing_info_detector", return_value=mock_det),
             patch("clinical.graph.nodes._get_therapeutic_planner", return_value=mock_planner),
+            patch("clinical.graph.nodes._get_session_planner", return_value=mock_session_planner),
             patch("clinical.graph.nodes._get_response_generator", return_value=mock_resp),
             patch("clinical.graph.nodes._get_safety_validator", return_value=mock_safety),
         ):
@@ -463,6 +587,7 @@ class TestBuildGraph:
             assert "evidence" in result
             assert "formulation" in result
             assert "plan" in result
+            assert "session_plan" in result
             assert "safety_report" in result
 
 

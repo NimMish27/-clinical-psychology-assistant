@@ -212,6 +212,31 @@ class SecuritySettings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore", populate_by_name=True)
 
 
+class WorkflowSettings(BaseSettings):
+    """Human-in-the-loop workflow persistence configuration."""
+
+    db_path: Path = Field(
+        PROJECT_ROOT / "data" / "workflows.db", alias="WORKFLOW_DB_PATH"
+    )
+    ttl_seconds: int = Field(86400, alias="WORKFLOW_TTL_SECONDS", ge=60)
+    archive_db_path: Path = Field(
+        PROJECT_ROOT / "data" / "workflows_archive.db",
+        alias="WORKFLOW_ARCHIVE_DB_PATH",
+    )
+    archive_retention_days: int = Field(
+        365, alias="WORKFLOW_ARCHIVE_RETENTION_DAYS", ge=1
+    )
+
+    @field_validator("db_path", "archive_db_path", mode="before")
+    @classmethod
+    def resolve_and_create(cls, v: str | Path) -> Path:
+        p = Path(v)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        return p
+
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore", populate_by_name=True)
+
+
 # ── Aggregate settings object ─────────────────────────────────────────────────
 
 class Settings:
@@ -231,6 +256,7 @@ class Settings:
         self.logging = LoggingSettings()
         self.langfuse = LangfuseSettings()
         self.security = SecuritySettings()
+        self.workflow = WorkflowSettings()
 
     def is_production(self) -> bool:
         return self.app.env == "production"

@@ -12,6 +12,7 @@ from clinical.missing_info.models import MissingInfoResult
 from clinical.query_generation.models import QueryGenerationResult
 from clinical.response_generation.models import ClinicalResponseResult
 from clinical.safety_validation.models import SafetyValidationResult
+from clinical.session_planning.models import SessionPlanResult
 from clinical.therapeutic_planning.models import TherapeuticPlanResult
 from rag.retriever import RetrievedChunk
 
@@ -37,6 +38,10 @@ class GraphState(TypedDict, total=False):
     session_id: Optional[str]
     enabled_frameworks: Optional[list[str]]
     selected_framework: Optional[str]
+    workflow_id: Optional[str]
+    awaiting_selection: Optional[bool]
+    reported_diagnosis: Optional[str]
+    patient_metadata: Optional[dict[str, Any]]
 
     # ── Module outputs (set by nodes, consumed by downstream) ─
     understanding: Optional[CaseUnderstandingResult]
@@ -48,6 +53,7 @@ class GraphState(TypedDict, total=False):
     formulation: Optional[ClinicalFormulationResult]
     missing_info: Optional[MissingInfoResult]
     plan: Optional[TherapeuticPlanResult]
+    session_plan: Optional[SessionPlanResult]
     response: Optional[ClinicalResponseResult]
     safety_report: Optional[SafetyValidationResult]
 

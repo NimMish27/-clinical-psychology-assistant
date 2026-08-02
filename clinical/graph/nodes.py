@@ -6,7 +6,10 @@ from clinical.case_understanding import CaseUnderstandingExtractor
 from clinical.evidence_synthesis import EvidenceSynthesizer
 from clinical.formulation import ClinicalFormulator
 from clinical.frameworks.comparator import FrameworkComparisonEngine
-from clinical.frameworks.models import FrameworkContext
+from clinical.frameworks.models import (
+    FrameworkComparisonResult,
+    FrameworkContext,
+)
 from clinical.frameworks.registry import get_framework_registry
 from clinical.frameworks.router import ParallelFrameworkRouter
 from clinical.graph.state import GraphState
@@ -15,6 +18,7 @@ from clinical.missing_info import MissingInfoDetector
 from clinical.query_generation import RetrievalQueryGenerator
 from clinical.response_generation import ResponseGenerator
 from clinical.safety_validation import SafetyValidator
+from clinical.session_planning import SessionPlanner
 from clinical.therapeutic_planning import TherapeuticPlanner
 from rag.retriever import Retriever, RetrievedChunk, get_retriever
 from app_logging.logger import get_logger
@@ -37,6 +41,28 @@ def _sort_and_deduplicate(chunks: list[RetrievedChunk]) -> list[RetrievedChunk]:
     return unique
 
 
+def _framework_lens_text(state: GraphState) -> str | None:
+    """Format the selected framework's analysis as an explicit lens.
+
+    Downstream stages (formulation, planning, session planning) use this
+    to anchor their output in the single framework the psychologist
+    chose, so only that framework's concepts drive the rest of the chain.
+    Returns ``None`` when no framework has been selected yet.
+    """
+    selected = state.get("selected_framework")
+    results = state.get("framework_results") or {}
+    result = results.get(selected) if selected else None
+    if result is None:
+        return None
+    return (
+        f"Framework: {result.framework_name}\n"
+        f"Conceptualisation: {result.conceptualization}\n"
+        f"Key concepts: {', '.join(result.key_concepts)}\n"
+        f"Therapeutic approaches: {', '.join(result.therapeutic_approaches)}\n"
+        f"Evidence alignment: {result.evidence_alignment}"
+    )
+
+
 # ── Node factories (lazy singletons) ─────────────────────────
 
 _ex: CaseUnderstandingExtractor | None = None  # noqa: N816
@@ -46,6 +72,7 @@ _es: EvidenceSynthesizer | None = None  # noqa: N816
 _cf: ClinicalFormulator | None = None  # noqa: N816
 _mi: MissingInfoDetector | None = None  # noqa: N816
 _tp: TherapeuticPlanner | None = None  # noqa: N816
+_sp: SessionPlanner | None = None  # noqa: N816
 _rg: ResponseGenerator | None = None  # noqa: N816
 _sv: SafetyValidator | None = None  # noqa: N816
 
@@ -97,6 +124,13 @@ def _get_therapeutic_planner(llm: Any) -> TherapeuticPlanner:
     if _tp is None:
         _tp = TherapeuticPlanner(llm=llm)
     return _tp
+
+
+def _get_session_planner(llm: Any) -> SessionPlanner:
+    global _sp
+    if _sp is None:
+        _sp = SessionPlanner(llm=llm)
+    return _sp
 
 
 def _get_response_generator(llm: Any) -> ResponseGenerator:
@@ -213,7 +247,7 @@ async def node_framework_analysis(state: GraphState) -> dict[str, Any]:
         frameworks = registry.get_enabled(enabled)
         if not frameworks:
             _log.info("graph.framework_analysis.no_frameworks")
-            return {"framework_results": {}}
+            return {"framework_results": {}, "enabled_frameworks": []}
 
         llm = get_llm_service()
         context = FrameworkContext(
@@ -223,6 +257,10 @@ async def node_framework_analysis(state: GraphState) -> dict[str, Any]:
             retrieved_chunks=state.get("retrieved_chunks", []),
             session_id=state.get("session_id"),
             llm=llm,
+            extra={
+                "reported_diagnosis": state.get("reported_diagnosis"),
+                "patient_metadata": state.get("patient_metadata"),
+            },
         )
 
         router = ParallelFrameworkRouter()
@@ -232,7 +270,10 @@ async def node_framework_analysis(state: GraphState) -> dict[str, Any]:
             count=len(results),
             frameworks=list(results.keys()),
         )
-        return {"framework_results": results}
+        return {
+            "framework_results": results,
+            "enabled_frameworks": [f.name for f in frameworks],
+        }
     except Exception as exc:
         _log.error("graph.framework_analysis_failed", error=str(exc))
         return {"errors": {"framework_analysis": f"{exc}"}}
@@ -253,6 +294,62 @@ async def node_framework_comparison(state: GraphState) -> dict[str, Any]:
         return {"errors": {"framework_comparison": f"{exc}"}}
 
 
+async def node_framework_selection(state: GraphState) -> dict[str, Any]:
+    """Enforce the human-in-the-loop framework selection gate.
+
+    Three modes:
+
+      - **Pause** (resumable run awaiting psychologist selection):
+        ``workflow_id`` is set but ``selected_framework`` is not —
+        mark ``awaiting_selection=True`` so the graph halts at this node.
+      - **Resume** (selection provided): prune ``framework_results`` to
+        the selected framework only and recompute the comparison for that
+        single framework, so downstream work continues using only the
+        chosen lens.
+      - **Legacy** (no ``workflow_id``): pass-through — the full pipeline
+        behaves exactly as it did before this feature.
+    """
+    workflow_id = state.get("workflow_id")
+    selected = state.get("selected_framework")
+
+    if workflow_id and not selected:
+        _log.info("graph.framework_selection.paused", workflow_id=workflow_id)
+        return {"awaiting_selection": True}
+
+    if selected:
+        results = state.get("framework_results") or {}
+        pruned = {name: res for name, res in results.items() if name == selected}
+        if not pruned:
+            _log.warning(
+                "graph.framework_selection.missing_result",
+                selected_framework=selected,
+                available=sorted(results.keys()),
+            )
+            return {
+                "awaiting_selection": False,
+                "enabled_frameworks": [selected],
+                "selected_framework": selected,
+                "framework_results": {},
+                "framework_comparison": FrameworkComparisonResult(),
+            }
+        comparator = FrameworkComparisonEngine()
+        comparison = comparator.compare(pruned)
+        _log.info(
+            "graph.framework_selection.resumed",
+            selected_framework=selected,
+            pruned_count=len(pruned),
+        )
+        return {
+            "awaiting_selection": False,
+            "enabled_frameworks": [selected],
+            "selected_framework": selected,
+            "framework_results": pruned,
+            "framework_comparison": comparison,
+        }
+
+    return {"awaiting_selection": False}
+
+
 async def node_clinical_formulation(state: GraphState) -> dict[str, Any]:
     """Generate clinical formulation from understanding and evidence."""
     understanding = state.get("understanding")
@@ -269,6 +366,7 @@ async def node_clinical_formulation(state: GraphState) -> dict[str, Any]:
         result = await formulator.formulate(
             case_data=case_data,
             evidence_synthesis=evidence_str,
+            framework_lens=_framework_lens_text(state),
         )
         return {"formulation": result}
     except Exception as exc:
@@ -318,11 +416,38 @@ async def node_therapeutic_planning(state: GraphState) -> dict[str, Any]:
             missing_information=formulation.missing_assessment_information,
             caution=formulation.caution,
             evidence_themes=[t.description for t in evidence.common_themes] if evidence else None,
+            framework_lens=_framework_lens_text(state),
         )
         return {"plan": result}
     except Exception as exc:
         _log.error("graph.therapeutic_planning_failed", error=str(exc))
         return {"errors": {"therapeutic_planning": f"{exc}"}}
+
+
+async def node_session_planning(state: GraphState) -> dict[str, Any]:
+    """Generate a session plan from formulation, plan, and selected framework."""
+    formulation = state.get("formulation")
+    plan = state.get("plan")
+    if not formulation or not plan:
+        return {"errors": {"session_planning": "No formulation/plan available"}}
+
+    try:
+        llm = get_llm_service()
+        planner = _get_session_planner(llm)
+        result = await planner.plan(
+            formulation=formulation.model_dump_json(),
+            plan_text=plan.model_dump_json(),
+            case_summary=formulation.case_summary,
+            selected_framework=state.get("selected_framework"),
+            framework_lens=_framework_lens_text(state),
+            therapeutic_focus=[f.area for f in plan.therapeutic_focus],
+            treatment_goals=[g.goal for g in plan.treatment_goals],
+            caution=formulation.caution,
+        )
+        return {"session_plan": result}
+    except Exception as exc:
+        _log.error("graph.session_planning_failed", error=str(exc))
+        return {"errors": {"session_planning": f"{exc}"}}
 
 
 async def node_response_generation(state: GraphState) -> dict[str, Any]:
@@ -367,7 +492,7 @@ async def node_response_generation(state: GraphState) -> dict[str, Any]:
         evidence_findings: list[str] | None = None
         if evidence:
             evidence_summary = evidence.overall_summary
-            evidence_findings = [f.description for f in evidence.key_findings]
+            evidence_findings = [f.statement for f in evidence.key_findings]
 
         missing_text = None
         if missing_info and missing_info.missing_information:
@@ -386,11 +511,14 @@ async def node_response_generation(state: GraphState) -> dict[str, Any]:
         if plan:
             focus_areas = [f.area for f in plan.therapeutic_focus]
             intervention_text = "\n".join(
-                f"- **{d.modality}**: {d.description}" for d in plan.intervention_directions
+                f"- **{d.area}**: "
+                f"{'; '.join(d.suggested_approaches) if d.suggested_approaches else '—'} "
+                f"— {d.rationale}"
+                for d in plan.intervention_directions
             )
             cbt = [f"{s.technique}: {s.rationale}" for s in plan.cbt_strategies]
-            act = [f"{s.technique}: {s.rationale}" for s in plan.act_strategies]
-            dbt = [f"{s.technique}: {s.rationale}" for s in plan.dbt_strategies]
+            act = [f"{s.process}: {s.rationale}" for s in plan.act_strategies]
+            dbt = [f"{s.skill}: {s.rationale}" for s in plan.dbt_strategies]
             refs = plan.references if hasattr(plan, "references") else []
 
         result = await generator.generate(
@@ -420,7 +548,7 @@ async def node_response_generation(state: GraphState) -> dict[str, Any]:
             fw_section = comparator.to_comparison_markdown(comparison, framework_results)
             if fw_section:
                 new_markdown = result.markdown.rstrip() + "\n\n" + fw_section
-                sections = result.sections_generated + 1
+                sections = min(result.sections_generated + 1, 11)
                 from clinical.response_generation.models import ClinicalResponseResult
                 result = ClinicalResponseResult(
                     markdown=new_markdown,
@@ -442,7 +570,10 @@ async def node_safety_validation(state: GraphState) -> dict[str, Any]:
 
     try:
         validator = _get_safety_validator()
-        report = await validator.validate(response.markdown)
+        report = await validator.validate(
+            response.markdown,
+            reported_diagnosis=state.get("reported_diagnosis"),
+        )
         if report.was_revised:
             from clinical.response_generation.models import ClinicalResponseResult
             revised = ClinicalResponseResult(

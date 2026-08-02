@@ -120,3 +120,35 @@ def get_clinical_graph_dep():
 
 
 ClinicalGraphDep = Annotated[Any, Depends(get_clinical_graph_dep)]
+
+
+def get_workflow_store_dep():
+    """Provide the process-wide WorkflowStore singleton."""
+    try:
+        from clinical.workflow.store import get_workflow_store
+        return get_workflow_store()
+    except Exception as exc:
+        _log.error("deps.workflow_store_unavailable", error=str(exc))
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Workflow store is unavailable.",
+        ) from exc
+
+
+WorkflowStoreDep = Annotated[Any, Depends(get_workflow_store_dep)]
+
+
+def get_archive_store_dep():
+    """Provide the process-wide ArchiveStore singleton."""
+    try:
+        from clinical.workflow.archive import get_archive_store
+        return get_archive_store()
+    except Exception as exc:
+        _log.error("deps.archive_store_unavailable", error=str(exc))
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Archive store is unavailable.",
+        ) from exc
+
+
+ArchiveStoreDep = Annotated[Any, Depends(get_archive_store_dep)]

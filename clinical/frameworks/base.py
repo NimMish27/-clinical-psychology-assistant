@@ -137,6 +137,21 @@ class BaseFramework(ABC):
             parts.append("\n## Raw Case Text\n")
             parts.append(context.raw_text)
 
+        reported_diagnosis = (context.extra or {}).get("reported_diagnosis")
+        if reported_diagnosis:
+            parts.append("\n## Reported Diagnosis (UNVALIDATED)\n")
+            parts.append(
+                "The following diagnosis was REPORTED by the client or clinician. "
+                "It has NOT been validated by this system and must NOT be treated "
+                "as a confirmed diagnosis:\n"
+            )
+            parts.append(str(reported_diagnosis))
+
+        patient_metadata = (context.extra or {}).get("patient_metadata")
+        if patient_metadata:
+            parts.append("\n## Patient Metadata (as reported)\n")
+            parts.append(str(patient_metadata))
+
         return "\n".join(parts)
 
     @staticmethod

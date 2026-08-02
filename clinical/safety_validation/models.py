@@ -13,6 +13,7 @@ class SafetyIssueCategory(str, Enum):
     OVERCONFIDENT_LANGUAGE = "overconfident_language"
     ETHICAL_CONCERN = "ethical_concern"
     UNSAFE_RECOMMENDATION = "unsafe_recommendation"
+    REPORTED_DIAGNOSIS_CONFIRMED = "reported_diagnosis_confirmed"
 
 
 class Severity(str, Enum):

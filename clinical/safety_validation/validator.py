@@ -361,10 +361,136 @@ def _check_unsafe_recommendations(markdown: str) -> list[SafetyIssue]:
     return issues
 
 
+# ── Reported-diagnosis handling ────────────────────────────────
+
+_REPORTED_DIAGNOSIS_PREFIXES = (
+    "diagnosed with",
+    "diagnosis of",
+    "reported diagnosis",
+    "reported diagnosis of",
+    "suspected",
+    "possible",
+    "provisional",
+    "history of",
+    "reportedly",
+)
+
+_REPORTED_CONFIRM_PATTERNS = [
+    re.compile(r"\bconfirms?\b", re.IGNORECASE),
+    re.compile(r"\b(?:is|was)\s+confirmed\b", re.IGNORECASE),
+    re.compile(r"\bdiagnos(?:ed|is)\s+(?:with|of)\b", re.IGNORECASE),
+    re.compile(r"\b(?:meets|meet)\s+criteria\s+for\b", re.IGNORECASE),
+    re.compile(r"\bs(?:uffer|uffers|uffering)\s+from\b", re.IGNORECASE),
+    re.compile(r"\bhas\s+been\s+(?:established|validated)\b", re.IGNORECASE),
+]
+
+_REPORTED_CONTEXT_PATTERNS = [
+    re.compile(r"\breport(?:s|ed|ing)?\s+a?\s*diagnos", re.IGNORECASE),
+    re.compile(r"\breport(?:s|ed|ing)?\s+that\b", re.IGNORECASE),
+    re.compile(r"\bdiagnos(?:is|ed)\s+is\s+reported\b", re.IGNORECASE),
+    re.compile(r"\baccording\s+to\s+(?:the\s+)?(?:client|clinician|referral)\b", re.IGNORECASE),
+]
+
+
+def _is_reported_context(excerpt: str) -> bool:
+    """True when a confirmation match is actually describing reported info."""
+    return any(p.search(excerpt) for p in _REPORTED_CONTEXT_PATTERNS)
+
+
+def _normalize_reported_diagnosis(text: str) -> str:
+    """Strip leading qualifiers like 'reported diagnosis of' / 'suspected'."""
+    cleaned = text.strip().strip(":\"\u201c\u201d").lower()
+    changed = True
+    while changed:
+        changed = False
+        for prefix in _REPORTED_DIAGNOSIS_PREFIXES:
+            if cleaned.startswith(prefix):
+                cleaned = cleaned[len(prefix):].strip(" \t-:,")
+                changed = True
+    return cleaned.strip()
+
+
+def _check_reported_diagnosis_confirmed(
+    markdown: str,
+    reported_diagnosis: str | None,
+) -> list[SafetyIssue]:
+    """Flag the response if it presents a reported diagnosis as confirmed.
+
+    A diagnosis provided by the client or referring clinician is *reported*
+    only — the system must never validate it. If the generated report
+    repeats the label in confirming language, it implies diagnostic
+    certainty, which this system must not assert.
+    """
+    issues: list[SafetyIssue] = []
+    if not reported_diagnosis or not reported_diagnosis.strip():
+        return issues
+
+    normalized = _normalize_reported_diagnosis(reported_diagnosis)
+    if len(normalized) < 3:
+        return issues
+
+    # Key terms of the diagnosis label, ignoring stop words.
+    stopwords = {"the", "of", "with", "and", "or", "a", "an", "for"}
+    terms = [w for w in normalized.split() if w not in stopwords and len(w) > 2]
+
+    for pattern in _REPORTED_CONFIRM_PATTERNS:
+        for match in pattern.finditer(markdown):
+            start = max(0, match.start() - 30)
+            end = min(len(markdown), match.end() + 120)
+            excerpt = markdown[start:end].replace("\n", " ")
+            if _is_reported_context(excerpt):
+                # The label appears inside reporting language (e.g. "the
+                # client reports a diagnosis of X") — not a confirmation.
+                continue
+            # Only flag when the confirmation language is near the
+            # reported diagnosis label.
+            hits = sum(1 for t in terms if t in excerpt.lower())
+            if hits >= 2 or (terms and terms[0] in excerpt.lower()):
+                issues.append(SafetyIssue(
+                    category=SafetyIssueCategory.REPORTED_DIAGNOSIS_CONFIRMED,
+                    severity=Severity.MEDIUM,
+                    location=_find_section(markdown, match.start()),
+                    excerpt=excerpt[:200],
+                    explanation=(
+                        f"The report presents the client-reported diagnosis "
+                        f"('{reported_diagnosis}') as confirmed. This system "
+                        "must not validate or confirm a diagnosis."
+                    ),
+                    suggestion=(
+                        f"Rephrase to describe the diagnosis as reported by "
+                        f"the client or referring clinician (e.g. 'the client "
+                        f"reports a diagnosis of {normalized}'), and note it "
+                        "has not been independently validated."
+                    ),
+                ))
+                break
+    return issues
+
+
+def _add_reported_diagnosis_note(
+    markdown: str,
+    reported_diagnosis: str | None,
+) -> str:
+    """Append a note clarifying the reported status of a client diagnosis."""
+    if not reported_diagnosis or not reported_diagnosis.strip():
+        return markdown
+    normalized = _normalize_reported_diagnosis(reported_diagnosis)
+    note = (
+        "\n\n> **Reported diagnosis**: The client or referring clinician "
+        f"reported a diagnosis of *{normalized}*. This diagnosis has not "
+        "been independently validated by this system and is presented as "
+        "reported information only."
+    )
+    if note not in markdown:
+        return markdown.rstrip() + note
+    return markdown
+
+
 def _revise_response(
     markdown: str,
     sections: dict[str, str],
     issues: list[SafetyIssue],
+    reported_diagnosis: str | None = None,
 ) -> tuple[str, str]:
     """Apply automatic revisions to address issues. Returns (revised_markdown, summary)."""
     revised = markdown
@@ -380,6 +506,10 @@ def _revise_response(
     )
     has_overconfident = any(
         i.category == SafetyIssueCategory.OVERCONFIDENT_LANGUAGE
+        for i in issues
+    )
+    has_reported_confirmed = any(
+        i.category == SafetyIssueCategory.REPORTED_DIAGNOSIS_CONFIRMED
         for i in issues
     )
 
@@ -420,6 +550,10 @@ def _revise_response(
             revised += _OVERCONFIDENT_DISCLAIMER
             changes.append("Added note on confidence/hypothesis nature of formulations")
 
+    if has_reported_confirmed:
+        revised = _add_reported_diagnosis_note(revised, reported_diagnosis)
+        changes.append("Added note clarifying the reported (unvalidated) status of the client diagnosis")
+
     summary = "; ".join(changes) if changes else "No automatic revisions needed"
     return revised, summary
 
@@ -453,6 +587,7 @@ class SafetyValidator:
     async def validate(
         self,
         markdown: str,
+        reported_diagnosis: str | None = None,
     ) -> SafetyValidationResult:
         t_start = time.perf_counter()
 
@@ -472,12 +607,18 @@ class SafetyValidator:
         issues.extend(_check_missing_citations(markdown, sections))
         issues.extend(_check_ethical_concerns(markdown))
         issues.extend(_check_unsafe_recommendations(markdown))
+        issues.extend(_check_reported_diagnosis_confirmed(markdown, reported_diagnosis))
 
         revised_md = markdown
         revision_summary = ""
         was_revised = False
         if issues:
-            revised_md, revision_summary = _revise_response(markdown, sections, issues)
+            revised_md, revision_summary = _revise_response(
+                markdown,
+                sections,
+                issues,
+                reported_diagnosis=reported_diagnosis,
+            )
             was_revised = revised_md != markdown
 
         overall_verdict = _determine_verdict(issues)

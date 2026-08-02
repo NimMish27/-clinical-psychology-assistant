@@ -13,6 +13,8 @@ Run:
 from __future__ import annotations
 
 import io
+import tempfile
+from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -54,6 +56,8 @@ def mock_settings():
     cfg.server.port = 8000
     cfg.server.workers = 1
     cfg.server.reload = True
+    cfg.workflow.db_path = Path(tempfile.mkdtemp()) / "workflows.db"
+    cfg.workflow.ttl_seconds = 3600
     return cfg
 
 

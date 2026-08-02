@@ -20,7 +20,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -268,10 +268,42 @@ class ClinicalAnalyzeRequest(BaseModel):
         None,
         description='Override: "single_statement", "symptom_list", "case_study"',
     )
+    resumable: bool = Field(
+        False,
+        description=(
+            "If true, pause after framework comparison and wait for the "
+            "psychologist to select a framework via POST /framework/select"
+        ),
+    )
+    reported_diagnosis: str | None = Field(
+        None,
+        max_length=2000,
+        description=(
+            "Optional diagnosis REPORTED by the client or referring clinician. "
+            "It is treated as reported only — never validated — and the "
+            "safety validator ensures the final report does not present it "
+            "as confirmed."
+        ),
+    )
+    patient_metadata: dict[str, Any] | None = Field(
+        None,
+        description="Optional structured patient metadata (age, gender, occupation, etc.)",
+    )
 
 
 class ClinicalAnalyzeResponse(BaseModel):
     input_type: str = Field(default="", description="Detected input type")
+    status: Literal["completed", "awaiting_selection"] = Field(
+        default="completed",
+        description=(
+            "Workflow status — 'awaiting_selection' when paused for "
+            "psychologist framework selection"
+        ),
+    )
+    workflow_id: str | None = Field(
+        None,
+        description="Workflow ID for resumable runs",
+    )
     understanding: dict[str, Any] = Field(
         default_factory=dict,
         description="Case understanding extraction result",
@@ -283,6 +315,13 @@ class ClinicalAnalyzeResponse(BaseModel):
     evidence: dict[str, Any] = Field(
         default_factory=dict,
         description="Evidence synthesis result",
+    )
+    framework_analyses: list[dict[str, Any]] = Field(
+        default_factory=list,
+        description=(
+            "Per-framework analyses. All enabled frameworks when awaiting "
+            "selection; only the psychologist-chosen framework after resume."
+        ),
     )
     framework_comparison: dict[str, Any] = Field(
         default_factory=dict,
@@ -300,6 +339,10 @@ class ClinicalAnalyzeResponse(BaseModel):
         default_factory=dict,
         description="Therapeutic planning result",
     )
+    session_planning: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Session planning result",
+    )
     response: dict[str, Any] = Field(
         default_factory=dict,
         description="Final clinical response markdown",
@@ -308,10 +351,43 @@ class ClinicalAnalyzeResponse(BaseModel):
         default_factory=dict,
         description="Safety validation report with issues found and revision status",
     )
+    reported_diagnosis: str | None = Field(
+        None,
+        description="Echo of the reported diagnosis, if provided",
+    )
+    patient_metadata: dict[str, Any] | None = Field(
+        None,
+        description="Echo of the patient metadata, if provided",
+    )
     errors: dict[str, str] = Field(
         default_factory=dict,
         description="Node-level errors keyed by stage name",
     )
     elapsed_ms: float = Field(default=0.0, ge=0.0)
+
+    model_config = {"frozen": True}
+
+
+# ── /clinical/framework/select ─────────────────────────────────
+
+class FrameworkSelectRequest(BaseModel):
+    """Request body for ``POST /clinical/framework/select``.
+
+    Attributes:
+        workflow_id:        ID of a paused resumable workflow.
+        selected_framework: Framework to continue with (e.g. ``"DBT"``).
+    """
+    workflow_id: str = Field(
+        ...,
+        min_length=1,
+        max_length=64,
+        description="ID of the paused workflow",
+    )
+    selected_framework: str = Field(
+        ...,
+        min_length=1,
+        max_length=64,
+        description="Framework to continue with (e.g. 'DBT')",
+    )
 
     model_config = {"frozen": True}

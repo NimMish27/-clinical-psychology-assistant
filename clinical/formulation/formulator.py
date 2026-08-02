@@ -135,6 +135,7 @@ class ClinicalFormulator:
         duration: str | None = None,
         previous_treatment: str | None = None,
         evidence_synthesis: str | None = None,
+        framework_lens: str | None = None,
     ) -> ClinicalFormulationResult:
         """Generate a clinical formulation from case information.
 
@@ -149,6 +150,9 @@ class ClinicalFormulator:
             duration:        Duration of presenting concerns.
             previous_treatment: Previous treatment history.
             evidence_synthesis: Free-text evidence synthesis summary.
+            framework_lens:  Optional formatted description of the selected
+                             therapeutic framework's analysis, used to anchor
+                             the formulation in that framework's lens.
 
         Returns:
             ClinicalFormulationResult with structured formulation fields.
@@ -168,6 +172,8 @@ class ClinicalFormulator:
                 previous_treatment=previous_treatment,
                 evidence_synthesis=evidence_synthesis,
             )
+        if framework_lens:
+            prompt += f"\n## Selected Framework Lens\n{framework_lens}\n"
 
         # Check whether any substantive case content was provided
         has_content = bool(
