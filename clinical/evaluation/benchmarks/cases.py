@@ -15,6 +15,13 @@ class GroundTruth:
     unsafe_phrases: list[str] = field(default_factory=list)
     expected_citations: list[str] = field(default_factory=list)
     clinical_helpfulness_rubric: dict[str, list[str]] = field(default_factory=dict)
+    # CBT-specific evaluation fields
+    expected_cbt_conceptualization_components: list[str] = field(default_factory=list)
+    expected_cognitive_distortions: list[str] = field(default_factory=list)
+    expected_core_belief_patterns: list[str] = field(default_factory=list)
+    expected_automatic_thought_patterns: list[str] = field(default_factory=list)
+    expected_cbt_literature_topics: list[str] = field(default_factory=list)
+    expected_maintaining_cycles: list[str] = field(default_factory=list)
 
 
 @dataclass(frozen=True)

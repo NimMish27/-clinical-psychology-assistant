@@ -138,6 +138,7 @@ class ResponseGenerator:
         dbt_strategies: list[str] | None = None,
         references: list[str] | None = None,
         caution: str | None = None,
+        framework_guidance: str | None = None,
     ) -> ClinicalResponseResult:
         """Generate a full markdown clinical report.
 
@@ -158,6 +159,7 @@ class ResponseGenerator:
             dbt_strategies:           DBT strategies list.
             references:               Reference list.
             caution:                  Caution note from formulation.
+            framework_guidance:       Framework-specific clinical guidance.
 
         Returns:
             ClinicalResponseResult with the markdown report.
@@ -181,6 +183,7 @@ class ResponseGenerator:
             dbt_strategies=dbt_strategies,
             references=references,
             caution=caution,
+            framework_guidance=framework_guidance,
         )
 
         if not self._has_content(prompt):
@@ -243,6 +246,7 @@ class ResponseGenerator:
         dbt_strategies: list[str] | None,
         references: list[str] | None,
         caution: str | None,
+        framework_guidance: str | None = None,
     ) -> str:
         parts: list[str] = []
 
@@ -276,6 +280,8 @@ class ResponseGenerator:
             parts.append("## ACT Strategies\n" + "\n".join(f"- {a}" for a in act_strategies) + "\n")
         if dbt_strategies:
             parts.append("## DBT Strategies\n" + "\n".join(f"- {d}" for d in dbt_strategies) + "\n")
+        if framework_guidance:
+            parts.append(f"## Framework Guidance\n{framework_guidance}\n")
         if references:
             parts.append("## References\n" + "\n".join(f"- {r}" for r in references) + "\n")
 

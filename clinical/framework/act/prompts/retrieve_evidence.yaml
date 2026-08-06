@@ -1,0 +1,39 @@
+version: "1.1.0"
+description: "Acceptance and Commitment Therapy — retrieve and synthesise relevant evidence"
+variables:
+  - name: system_header
+    description: "System prompt header identifying the framework"
+    required: true
+  - name: case_text
+    description: "Formatted case understanding, formulation, and evidence"
+    required: true
+  - name: output_schema
+    description: "JSON schema for the EvidenceResult model"
+    required: true
+templates:
+  en: |
+    {{ system_header }}
+
+    As an Acceptance and Commitment Therapy practitioner, retrieve and synthesise evidence relevant to this case.
+
+    Consider the following ACT evidence domains:
+    1. Outcome research: meta-analyses and RCTs of ACT for the identified problem areas (depression, anxiety disorders, chronic pain, OCD, substance use, life transitions, burnout). Distinguish ACT from CBT in outcome studies.
+    2. Core ACT mechanisms: psychological flexibility as a mediator of outcomes; evidence for the six processes (acceptance, defusion, self-as-context, contact with present moment, values, committed action)
+    3. ACT models: Hayes' Relational Frame Theory (RFT) underpinnings, Psychological Flexibility Model, ACT hexaflex model
+    4. Specific protocols: ACT for depression, ACT for anxiety, ACT for chronic pain, ACT for obsessive-compulsive patterns, ACT for substance use, ACT for stress and burnout
+    5. Process measures: AAQ-II (Acceptance and Action Questionnaire), VQ (Valued Living Questionnaire), CFQ (Cognitive Fusion Questionnaire), CompACT (Comprehensive Assessment of ACT Processes)
+    6. Comparisons: ACT vs. CBT comparisons (equivalence and mechanisms); ACT as alternative when cognitive restructuring creates fusion with content
+
+    IMPORTANT: Never assign diagnostic labels (e.g., "major depressive disorder", "generalised anxiety disorder"). Describe patterns, behaviours, and cognitive processes using descriptive clinical language only.
+
+    {{ case_text }}
+
+    Identify key findings, synthesise the evidence base, note gaps,
+    and rate your confidence. If no literature collection is available,
+    suggest the type of evidence that would be needed.
+
+    Respond with valid JSON matching this schema exactly:
+    {{ output_schema }}
+
+    Return ONLY the JSON object. No markdown fences.
+    No explanatory text before or after.

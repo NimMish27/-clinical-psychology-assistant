@@ -1,0 +1,38 @@
+version: "1.1.0"
+description: "Cognitive Behavioral Therapy — retrieve and synthesise relevant evidence"
+variables:
+  - name: system_header
+    description: "System prompt header identifying the framework"
+    required: true
+  - name: case_text
+    description: "Formatted case understanding, formulation, and evidence"
+    required: true
+  - name: output_schema
+    description: "JSON schema for the EvidenceResult model"
+    required: true
+templates:
+  en: |
+    {{ system_header }}
+
+    As a Cognitive Behavioral Therapy practitioner, retrieve and synthesise evidence relevant to this case.
+
+    Consider the following CBT evidence domains:
+    1. Outcome research: meta-analyses and RCTs of CBT for the identified problem areas (depression, anxiety, OCD, PTSD, eating disorders, insomnia, chronic pain)
+    2. Cognitive models: Beck's cognitive model of depression, Clark's cognitive model of panic, Wells' metacognitive model, Salkovskis' cognitive model of OCD
+    3. Behavioural mechanisms: behavioural activation efficacy for mood, exposure therapy mechanisms (habituation, inhibitory learning, fear extinction), response prevention
+    4. Specific protocols: cognitive restructuring protocols, thought record formats, behavioural experiment designs, exposure hierarchy construction, activity scheduling templates
+    5. Common factors: therapeutic alliance in CBT, homework compliance predictors, relapse prevention strategies
+
+    IMPORTANT: Never assign diagnostic labels (e.g., "major depressive disorder", "generalised anxiety disorder"). Describe patterns, behaviours, and cognitive processes using descriptive clinical language only.
+
+    {{ case_text }}
+
+    Identify key findings, synthesise the evidence base, note gaps,
+    and rate your confidence. If no literature collection is available,
+    suggest the type of evidence that would be needed.
+
+    Respond with valid JSON matching this schema exactly:
+    {{ output_schema }}
+
+    Return ONLY the JSON object. No markdown fences.
+    No explanatory text before or after.

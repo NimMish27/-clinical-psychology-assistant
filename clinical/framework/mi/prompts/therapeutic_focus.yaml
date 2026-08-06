@@ -1,0 +1,30 @@
+version: "1.0.0"
+description: "Motivational Interviewing — identify therapeutic focus areas"
+variables:
+  - name: system_header
+    description: "System prompt header identifying the framework"
+    required: true
+  - name: case_text
+    description: "Formatted case understanding, formulation, and evidence"
+    required: true
+  - name: output_schema
+    description: "JSON schema for the TherapeuticFocusResult model"
+    required: true
+templates:
+  en: |
+    {{ system_header }}
+
+    As a Motivational Interviewing practitioner, identify therapeutic focus areas.
+
+    Evoking change talk, softening sustain talk, rolling with resistance, supporting self-efficacy
+
+    {{ case_text }}
+
+    Specify primary and secondary focus areas, staging/sequencing,
+    and the clinical rationale.
+
+    Respond with valid JSON matching this schema exactly:
+    {{ output_schema }}
+
+    Return ONLY the JSON object. No markdown fences.
+    No explanatory text before or after.

@@ -34,6 +34,8 @@ python-dotenv==1.0.1            # .env file loading
 tenacity==9.0.0                 # retry logic for LLM calls
 tiktoken==0.8.0                 # token counting (model-agnostic)
 numpy==1.26.4                   # array ops (pinned for compatibility)
+jinja2==3.1.4                   # prompt template rendering
+pyyaml==6.0.2                   # YAML template file parsing
 
 # ── Observability ──────────────────────────────────────────────────────────────
 langfuse>=4.0.0                 # LLM observability and tracing

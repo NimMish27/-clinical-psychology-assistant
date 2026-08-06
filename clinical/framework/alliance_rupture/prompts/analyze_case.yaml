@@ -1,0 +1,27 @@
+version: "1.0.0"
+description: "Alliance-Focused / Rupture Repair — analyse a clinical case through the framework lens"
+variables:
+  - name: system_header
+    description: "System prompt header identifying the framework"
+    required: true
+  - name: case_text
+    description: "Formatted case understanding, formulation, and evidence"
+    required: true
+  - name: output_schema
+    description: "JSON schema for the CaseAnalysis model"
+    required: true
+templates:
+  en: |
+    {{ system_header }}
+
+    As a Alliance-Focused / Rupture Repair practitioner, analyse this case.
+
+    Identify rupture markers (withdrawal vs confrontation), attachment patterns, and metacommunication readiness
+
+    {{ case_text }}
+
+    Respond with valid JSON matching this schema exactly:
+    {{ output_schema }}
+
+    Return ONLY the JSON object. No markdown fences.
+    No explanatory text before or after.

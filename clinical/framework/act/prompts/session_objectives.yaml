@@ -1,0 +1,73 @@
+version: "1.1.0"
+description: "Acceptance and Commitment Therapy — define session objectives and goals"
+variables:
+  - name: system_header
+    description: "System prompt header identifying the framework"
+    required: true
+  - name: case_text
+    description: "Formatted case understanding, formulation, and evidence"
+    required: true
+  - name: output_schema
+    description: "JSON schema for the SessionObjectivesResult model"
+    required: true
+templates:
+  en: |
+    {{ system_header }}
+
+    As an Acceptance and Commitment Therapy practitioner, define session-level objectives and goals.
+
+    ACT sessions are semi-structured and experiential. Objectives should focus on process rather than symptom reduction and on building psychological flexibility rather than eliminating distress.
+
+    Session structure:
+    1. Opening mindfulness or centring exercise (5-10 minutes) — any ACT-consistent mindfulness that anchors the client in the present moment
+    2. Bridge from previous session (what was learned? what was practised? what showed up?)
+    3. Collaborative focus-setting based on current in-sight presentation and the ACT process model
+    4. Experiential working part (exercises, metaphors, discussions focused on one or more ACT processes)
+    5. Committed action planning (what the client commits to practise between sessions)
+    6. Self-as-context closing (optional brief centring exercise)
+
+    Immediate objectives should focus on:
+    - Contacting creative hopelessness: helping the client see workability of control strategies
+    - Experiencing defusion from a specific, highly-fused thought
+    - Practising willingness: making space for a difficult emotion or sensation in session
+    - Clarifying one values domain that has been obscured
+    - Taking one small committed action step
+    - Strengthening present-moment awareness skills
+
+    Short-term goals (3-6 sessions):
+    - Client can distinguish between having a thought and buying into a thought (defusion)
+    - Client can identify control/avoidance strategies and contact their costs
+    - Client demonstrates willingness to make room for at least one difficult private experience
+    - Client begins to articulate personal values
+    - Client takes at least one committed action consistent with identified values
+    - Client can notice when attention has shifted from present moment to past/future
+
+    Long-term goals (entire course):
+    - Client has built broader, more flexible behavioural repertoire
+    - Client regularly identifies fusion and defuses spontaneously
+    - Client makes consistently values-consistent choices despite difficult inner experiences
+    - Client experiences reduced dominance of the conceptualised self (self-stories no longer drive behaviour)
+    - Client can self-identify patterns of inflexibility and use ACT skills to respond flexibly
+    - Client's valued living (not symptom reduction) is the primary outcome
+
+    Observable progress indicators:
+    - Client reports noticing thoughts without automatically acting on them
+    - Client engages in previously avoided activities that are values-consistent
+    - Client uses willingness language (e.g., "I'm willing to feel uneasy while I do this")
+    - Client spontaneously identifies fusion ("I notice I'm getting caught up in that story again")
+    - Client takes committed action steps between sessions
+    - Client reports increased ability to choose behaviour intentionally rather than reactively
+    - Client describes their valued directions in specific terms
+
+    IMPORTANT: Never assign diagnostic labels (e.g., "major depressive disorder", "generalised anxiety disorder"). Describe patterns, behaviours, and cognitive processes using descriptive clinical language only. Focus on the function of behaviour and the process of psychological flexibility, not on symptom reduction or diagnosis.
+
+    {{ case_text }}
+
+    Specify immediate objectives, short-term goals, long-term goals,
+    and observable progress indicators.
+
+    Respond with valid JSON matching this schema exactly:
+    {{ output_schema }}
+
+    Return ONLY the JSON object. No markdown fences.
+    No explanatory text before or after.

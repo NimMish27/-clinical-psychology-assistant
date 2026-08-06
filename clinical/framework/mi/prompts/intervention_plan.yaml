@@ -1,0 +1,30 @@
+version: "1.0.0"
+description: "Motivational Interviewing — generate an intervention plan"
+variables:
+  - name: system_header
+    description: "System prompt header identifying the framework"
+    required: true
+  - name: case_text
+    description: "Formatted case understanding, formulation, and evidence"
+    required: true
+  - name: output_schema
+    description: "JSON schema for the InterventionPlanResult model"
+    required: true
+templates:
+  en: |
+    {{ system_header }}
+
+    As a Motivational Interviewing practitioner, generate an intervention plan.
+
+    OARS (open questions, affirmations, reflections, summaries), decisional balance, importance/confidence rulers, agenda mapping
+
+    {{ case_text }}
+
+    List specific interventions with technique and rationale.
+    Describe the provisional strategy, estimated duration, and expected outcomes.
+
+    Respond with valid JSON matching this schema exactly:
+    {{ output_schema }}
+
+    Return ONLY the JSON object. No markdown fences.
+    No explanatory text before or after.

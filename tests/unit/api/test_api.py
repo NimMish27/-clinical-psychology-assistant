@@ -232,26 +232,38 @@ class TestChatEndpoint:
 
     def test_session_id_optional(self, client):
         test_client, _ = client
-        resp = test_client.post(
-            "/api/v1/chat",
-            json={"query": "What is CBT?", "session_id": "sess-001"},
-        )
+        mock_retriever = MagicMock()
+        mock_retriever.aretrieve = AsyncMock(return_value=_make_retrieval_result(1))
+        with patch("api.routers.chat._call_llm", return_value="CBT is effective."), \
+             patch("api.dependencies.get_retriever_dep", return_value=mock_retriever):
+            resp = test_client.post(
+                "/api/v1/chat",
+                json={"query": "What is CBT?", "session_id": "sess-001"},
+            )
         assert resp.status_code != 422
 
     def test_source_filter_optional(self, client):
         test_client, _ = client
-        resp = test_client.post(
-            "/api/v1/chat",
-            json={"query": "What is CBT?", "source_filter": "DSM5.pdf"},
-        )
+        mock_retriever = MagicMock()
+        mock_retriever.aretrieve = AsyncMock(return_value=_make_retrieval_result(1))
+        with patch("api.routers.chat._call_llm", return_value="CBT is effective."), \
+             patch("api.dependencies.get_retriever_dep", return_value=mock_retriever):
+            resp = test_client.post(
+                "/api/v1/chat",
+                json={"query": "What is CBT?", "source_filter": "DSM5.pdf"},
+            )
         assert resp.status_code != 422
 
     def test_valid_page_range_accepted(self, client):
         test_client, _ = client
-        resp = test_client.post(
-            "/api/v1/chat",
-            json={"query": "What is CBT?", "page_range": [10, 50]},
-        )
+        mock_retriever = MagicMock()
+        mock_retriever.aretrieve = AsyncMock(return_value=_make_retrieval_result(1))
+        with patch("api.routers.chat._call_llm", return_value="CBT is effective."), \
+             patch("api.dependencies.get_retriever_dep", return_value=mock_retriever):
+            resp = test_client.post(
+                "/api/v1/chat",
+                json={"query": "What is CBT?", "page_range": [10, 50]},
+            )
         assert resp.status_code != 422
 
 

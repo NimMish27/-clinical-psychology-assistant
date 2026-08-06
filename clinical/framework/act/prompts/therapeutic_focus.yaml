@@ -1,0 +1,48 @@
+version: "1.1.0"
+description: "Acceptance and Commitment Therapy — identify therapeutic focus areas"
+variables:
+  - name: system_header
+    description: "System prompt header identifying the framework"
+    required: true
+  - name: case_text
+    description: "Formatted case understanding, formulation, and evidence"
+    required: true
+  - name: output_schema
+    description: "JSON schema for the TherapeuticFocusResult model"
+    required: true
+templates:
+  en: |
+    {{ system_header }}
+
+    As an Acceptance and Commitment Therapy practitioner, identify the primary therapeutic focus areas for this case.
+
+    Consider these ACT process domains:
+
+    1. Creative hopelessness: Does the client need to experientially contact that their current control and avoidance strategies are not working? Focus on helping the client see the workability of their approach rather than the therapist convincing them.
+
+    2. Acceptance and willingness: What is the client struggling to make room for? What private experiences need to be accepted rather than controlled or avoided? (emotions, bodily sensations, memories, thoughts). Focus on willingness as an active choice, not resignation.
+
+    3. Cognitive defusion: What thoughts, stories, or rules is the client fused with? Prioritise defusion work for thoughts that are most entangled and most linked to ineffective behaviour. (e.g., "I can't cope", "I'm broken", "Something terrible will happen", "I should be able to control this").
+
+    4. Contact with the present moment: Where is the client's attention stuck in past or future? How can mindfulness and present-moment awareness be cultivated? Focus on flexible, intentional attention rather than formal meditation.
+
+    5. Self-as-context (observing self): Is the client overly attached to a conceptualised self (e.g., "I am an anxious person", "I am unlovable")? Focus on helping the client contact a sense of self that is distinct from thoughts, feelings, and roles — the context in which experience happens rather than the content of experience.
+
+    6. Values clarification: What does the client truly care about? What directions are important? Values are chosen directions (not goals) that give life meaning. Focus on domains (relationships, work, health, community, personal growth, spirituality) where the client has drifted from values due to avoidance and fusion.
+
+    7. Committed action: What specific, values-consistent actions can the client commit to? Focus on building larger and larger patterns of values-based action. Distinguish committed action from goal-setting (goals are concrete; committed action is the ongoing direction of behaviour).
+
+    8. Staging and sequencing: What to address first? Often: creative hopelessness > acceptance/defusion > self-as-context > present moment > values > committed action. But sequence is individual — start where the client's pain is most evident.
+
+    IMPORTANT: Never assign diagnostic labels (e.g., "major depressive disorder", "generalised anxiety disorder"). Describe patterns, behaviours, and cognitive processes using descriptive clinical language only.
+
+    {{ case_text }}
+
+    Specify primary and secondary focus areas, staging/sequencing,
+    and the clinical rationale.
+
+    Respond with valid JSON matching this schema exactly:
+    {{ output_schema }}
+
+    Return ONLY the JSON object. No markdown fences.
+    No explanatory text before or after.

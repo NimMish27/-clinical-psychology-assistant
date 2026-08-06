@@ -1,0 +1,46 @@
+version: "1.1.0"
+description: "Acceptance and Commitment Therapy — generate a case conceptualisation"
+variables:
+  - name: system_header
+    description: "System prompt header identifying the framework"
+    required: true
+  - name: case_text
+    description: "Formatted case understanding, formulation, and evidence"
+    required: true
+  - name: output_schema
+    description: "JSON schema for the CaseConceptualization model"
+    required: true
+templates:
+  en: |
+    {{ system_header }}
+
+    As an Acceptance and Commitment Therapy practitioner, generate a comprehensive ACT case conceptualisation.
+
+    Structure the conceptualisation using the ACT model of psychological (in)flexibility:
+
+    1. Experiential avoidance and control agenda: What has the client learned about which private experiences are "bad" or "unacceptable"? What control strategies do they use (suppression, distraction, avoidance, numbing, reassurance-seeking)? How has the control agenda narrowed their life? What has it cost them?
+
+    2. Cognitive fusion and entanglement: What thoughts, beliefs, rules, and stories is the client fused with? Look for: reason-giving ("I can't because I'm too anxious"), judgemental language ("I'm weak", "it's terrible"), past-oriented stories ("I've always been this way"), future-oriented stories ("something bad will happen"), and rules ("I should be able to cope", "I must not show my feelings").
+
+    3. The conceptualised self: What self-narratives has the client constructed? (e.g., "I am an anxious person", "I am broken", "I am not good enough", "I'm the one who always messes up"). How do these stories limit behavioural flexibility?
+
+    4. Dominance of the conceptualised past and future: Where is the client's attention stuck — rehearsing the past (rumination, regret) or predicting the future (worry, catastrophising)? How does this undermine flexible contact with the present moment?
+
+    5. Disconnection from values: What values have been obscured or abandoned? What matters to the client under the surface of their struggle? Where is there a gap between valued life directions and current behaviour?
+
+    6. Inaction, impulsivity, and avoidant persistence: Where is the client stuck in patterns of inaction (withdrawal from life), impulsivity (acting out of fusion), or rigid persistence (trying harder with strategies that haven't worked)?
+
+    7. Maintaining cycles: How do these six processes interact to create and maintain the client's suffering? Show the functional interrelationships (e.g., "fusion with 'I can't cope' leads to avoidance of triggering situations, which provides short-term relief but reinforces the belief that the client can't cope, deepening the self-story of being inadequate, leading to further disengagement from valued activities, which increases suffering...").
+
+    IMPORTANT: Never assign diagnostic labels (e.g., "major depressive disorder", "generalised anxiety disorder"). Describe patterns, behaviours, and cognitive processes using descriptive clinical language only. Focus on function, not form — describe what the behaviour does (e.g., "avoidance of situations that trigger uncomfortable bodily sensations" rather than "agoraphobia").
+
+    {{ case_text }}
+
+    Describe the framework formulation, maintaining factors, core mechanisms,
+    developmental factors, and provide a summary.
+
+    Respond with valid JSON matching this schema exactly:
+    {{ output_schema }}
+
+    Return ONLY the JSON object. No markdown fences.
+    No explanatory text before or after.

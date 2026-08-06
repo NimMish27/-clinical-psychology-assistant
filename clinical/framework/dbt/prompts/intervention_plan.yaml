@@ -1,0 +1,30 @@
+version: "1.0.0"
+description: "Dialectical Behavior Therapy — generate an intervention plan"
+variables:
+  - name: system_header
+    description: "System prompt header identifying the framework"
+    required: true
+  - name: case_text
+    description: "Formatted case understanding, formulation, and evidence"
+    required: true
+  - name: output_schema
+    description: "JSON schema for the InterventionPlanResult model"
+    required: true
+templates:
+  en: |
+    {{ system_header }}
+
+    As a Dialectical Behavior Therapy practitioner, generate an intervention plan.
+
+    Skills training (mindfulness, distress tolerance, emotion regulation, interpersonal effectiveness), diary cards, coaching calls
+
+    {{ case_text }}
+
+    List specific interventions with technique and rationale.
+    Describe the provisional strategy, estimated duration, and expected outcomes.
+
+    Respond with valid JSON matching this schema exactly:
+    {{ output_schema }}
+
+    Return ONLY the JSON object. No markdown fences.
+    No explanatory text before or after.

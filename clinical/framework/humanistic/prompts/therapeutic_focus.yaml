@@ -1,0 +1,66 @@
+version: "1.1.0"
+description: "Person-Centred / Humanistic Therapy — identify therapeutic focus areas"
+variables:
+  - name: system_header
+    description: "System prompt header identifying the framework"
+    required: true
+  - name: case_text
+    description: "Formatted case understanding, formulation, and evidence"
+    required: true
+  - name: output_schema
+    description: "JSON schema for the TherapeuticFocusResult model"
+    required: true
+templates:
+  en: |
+    {{ system_header }}
+
+    As a Person-Centred / Humanistic Therapy practitioner, identify therapeutic focus areas.
+
+    The therapeutic relationship is the primary vehicle for change. Focus areas
+    should target the six necessary and sufficient conditions articulated by Rogers:
+
+    1. **Psychological contact**: Establishing a genuine meeting between therapist
+       and client as two persons, not a clinician and a patient
+
+    2. **Client incongruence**: Working with the places where the client's
+       self-concept does not match their actual experiencing. Create conditions
+       for the client to contact and tolerate previously denied or distorted
+       experience
+
+    3. **Therapist congruence/authenticity**: The therapist's willingness to be
+       genuine, transparent, and real in the relationship — not hiding behind a
+       professional facade. Let the client see you as a fellow human being
+
+    4. **Unconditional positive regard (UPR)**: Offering deep acceptance and
+       prizing of the client as a whole person, without conditions, evaluation,
+       or judgment. The client learns to extend this same UPR to themselves
+
+    5. **Empathic understanding**: Striving to grasp the client's internal frame
+       of reference as if it were your own, while never losing the 'as if'
+       quality. Check and refine understanding through active responding
+
+    6. **Client perception of therapist conditions**: The client must perceive
+       at least to a minimal degree the empathy, UPR, and congruence offered
+       by the therapist. Work to make these conditions experientially felt
+
+    Consider also:
+    - Supporting the actualising tendency: trusting the client's innate growth
+      direction rather than imposing a therapeutic agenda
+    - Phenomenological inquiry: exploring the client's lived experience as it is,
+      not through diagnostic or theoretical categories
+    - Experiential processing: helping the client stay with and deepen their
+      moment-to-moment felt sense (Gendlin's focusing)
+    - Contact and awareness in Gestalt therapy: what is the client avoiding
+      contact with, and how does interruption of contact show up?
+
+    {{ case_text }}
+
+    Respond with valid JSON matching this schema exactly:
+    {{ output_schema }}
+
+    Never assign diagnostic labels such as "major depressive disorder", "GAD",
+    "PTSD", "OCD", "BPD", "ADHD", or any DSM/ICD category. Describe relational
+    and experiential processes using humanistic therapy language.
+
+    Return ONLY the JSON object. No markdown fences.
+    No explanatory text before or after.

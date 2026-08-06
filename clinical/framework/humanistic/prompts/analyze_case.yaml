@@ -1,0 +1,45 @@
+version: "1.1.0"
+description: "Person-Centred / Humanistic Therapy — analyse a clinical case through the framework lens"
+variables:
+  - name: system_header
+    description: "System prompt header identifying the framework"
+    required: true
+  - name: case_text
+    description: "Formatted case understanding, formulation, and evidence"
+    required: true
+  - name: output_schema
+    description: "JSON schema for the CaseAnalysis model"
+    required: true
+templates:
+  en: |
+    {{ system_header }}
+
+    As a Person-Centred / Humanistic Therapy practitioner, analyse this case.
+
+    Assess the client's self-concept (how they perceive themselves), incongruence
+    between self-concept and actual experience, conditions of worth (what the client
+    believes they must be to be worthy of love), blocks to self-actualisation, and
+    the client's organismic valuing process. Describe the quality of the client's
+    relationship with themselves — self-regard, self-acceptance, and self-criticism.
+
+    Evaluate:
+    - Self-concept: what self-structures and self-narratives are present?
+    - Incongruence: where does the client's experience not match their self-concept?
+    - Conditions of worth: what conditional positive regard has the client internalised?
+    - Organismic valuing: is the client in touch with their own inner knowing?
+    - Self-actualisation tendency: what is blocking the client's growth?
+    - Congruence: how aligned is the client's inner experience with their outer expression?
+    - Client strengths: capacity for self-reflection, openness, willingness to be vulnerable
+
+    {{ case_text }}
+
+    Respond with valid JSON matching this schema exactly:
+    {{ output_schema }}
+
+    Never assign diagnostic labels such as "major depressive disorder", "GAD",
+    "PTSD", "OCD", "BPD", "ADHD", or any DSM/ICD category. Describe patterns,
+    behaviours, and experiential processes using descriptive clinical language
+    grounded in the person-centred tradition.
+
+    Return ONLY the JSON object. No markdown fences.
+    No explanatory text before or after.

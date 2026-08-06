@@ -1,0 +1,31 @@
+version: "1.0.0"
+description: "Motivational Interviewing — retrieve and synthesise relevant evidence"
+variables:
+  - name: system_header
+    description: "System prompt header identifying the framework"
+    required: true
+  - name: case_text
+    description: "Formatted case understanding, formulation, and evidence"
+    required: true
+  - name: output_schema
+    description: "JSON schema for the EvidenceResult model"
+    required: true
+templates:
+  en: |
+    {{ system_header }}
+
+    As a Motivational Interviewing practitioner, retrieve relevant evidence.
+
+    MI RCTs for substance use, health behaviour change, treatment engagement; process research on change talk
+
+    {{ case_text }}
+
+    Identify key findings, synthesise the evidence base, note gaps,
+    and rate your confidence. If no literature collection is available,
+    suggest the type of evidence that would be needed.
+
+    Respond with valid JSON matching this schema exactly:
+    {{ output_schema }}
+
+    Return ONLY the JSON object. No markdown fences.
+    No explanatory text before or after.

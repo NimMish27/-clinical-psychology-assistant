@@ -1,0 +1,30 @@
+version: "1.0.0"
+description: "General Psychotherapy — suggest follow-up questions"
+variables:
+  - name: system_header
+    description: "System prompt header identifying the framework"
+    required: true
+  - name: case_text
+    description: "Formatted case understanding, formulation, and evidence"
+    required: true
+  - name: output_schema
+    description: "JSON schema for the FollowupQuestionsResult model"
+    required: true
+templates:
+  en: |
+    {{ system_header }}
+
+    As a General Psychotherapy practitioner, suggest follow-up questions.
+
+    Progress monitoring, outcome assessment, therapy review, maintenance planning, termination preparation
+
+    {{ case_text }}
+
+    Include assessment questions, therapeutic probes, outcome monitoring
+    questions, and engagement questions.
+
+    Respond with valid JSON matching this schema exactly:
+    {{ output_schema }}
+
+    Return ONLY the JSON object. No markdown fences.
+    No explanatory text before or after.

@@ -1,0 +1,27 @@
+version: "1.0.0"
+description: "General Psychotherapy — analyse a clinical case through the framework lens"
+variables:
+  - name: system_header
+    description: "System prompt header identifying the framework"
+    required: true
+  - name: case_text
+    description: "Formatted case understanding, formulation, and evidence"
+    required: true
+  - name: output_schema
+    description: "JSON schema for the CaseAnalysis model"
+    required: true
+templates:
+  en: |
+    {{ system_header }}
+
+    As a General Psychotherapy practitioner, analyse this case.
+
+    Assess presenting problems, risk factors, protective factors, treatment history, and client preferences using a biopsychosocial lens
+
+    {{ case_text }}
+
+    Respond with valid JSON matching this schema exactly:
+    {{ output_schema }}
+
+    Return ONLY the JSON object. No markdown fences.
+    No explanatory text before or after.

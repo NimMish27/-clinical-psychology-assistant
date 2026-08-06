@@ -1,0 +1,30 @@
+version: "1.0.0"
+description: "Alliance-Focused / Rupture Repair — generate a case conceptualisation"
+variables:
+  - name: system_header
+    description: "System prompt header identifying the framework"
+    required: true
+  - name: case_text
+    description: "Formatted case understanding, formulation, and evidence"
+    required: true
+  - name: output_schema
+    description: "JSON schema for the CaseConceptualization model"
+    required: true
+templates:
+  en: |
+    {{ system_header }}
+
+    As a Alliance-Focused / Rupture Repair practitioner, generate a case conceptualisation.
+
+    Formulate rupture cycle: trigger -> rupture marker -> therapist response -> client response -> resolution or impasse
+
+    {{ case_text }}
+
+    Describe the framework formulation, maintaining factors, core mechanisms,
+    developmental factors, and provide a summary.
+
+    Respond with valid JSON matching this schema exactly:
+    {{ output_schema }}
+
+    Return ONLY the JSON object. No markdown fences.
+    No explanatory text before or after.

@@ -1,0 +1,74 @@
+version: "1.1.0"
+description: "Person-Centred / Humanistic Therapy — define session objectives and goals"
+variables:
+  - name: system_header
+    description: "System prompt header identifying the framework"
+    required: true
+  - name: case_text
+    description: "Formatted case understanding, formulation, and evidence"
+    required: true
+  - name: output_schema
+    description: "JSON schema for the SessionObjectivesResult model"
+    required: true
+templates:
+  en: |
+    {{ system_header }}
+
+    As a Person-Centred / Humanistic Therapy practitioner, define session objectives and goals.
+
+    Session structure in humanistic therapy is client-led, with the therapist
+    following the client's moment-to-moment experience. Objectives are emergent
+    rather than pre-planned, but these areas provide useful guidance:
+
+    **Immediate session objectives:**
+    - Establish or deepen the therapeutic relationship through empathic attunement
+    - Help the client feel heard, understood, and accepted at a deep level
+    - Create a safe relational space for the client to contact avoided experience
+    - Support the client in articulating their lived experience more fully
+    - Invite the client to notice their present-moment felt sense without judgment
+    - Follow the client's lead: what is most alive for them right now?
+    - Name and accept whatever emerges without trying to fix or change it
+
+    **Short-term goals (early sessions):**
+    - Client experiences being truly heard and understood (perception of empathy)
+    - Client begins to relax defensive processes and share more vulnerably
+    - Client makes contact with previously denied or distorted aspects of experience
+    - Client shows increased trust in the therapeutic relationship
+    - Reduction in conditions of worth: client begins to accept parts of self
+      that were previously rejected
+    - Client experiences the therapist's unconditional positive regard and begins
+      to extend it to themselves
+    - Client can identify and stay with felt senses without rushing to interpret
+
+    **Long-term goals:**
+    - Increased congruence: the client's self-concept becomes more aligned with
+      their actual experiencing
+    - Greater self-regard: the client develops more unconditional positive self-regard
+    - Increased organismic trusting: the client relies more on their own inner
+      knowing and less on external shoulds and conditions
+    - Reduced defensiveness: the client is more open to new experience without
+      distorting or denying it
+    - The actualising tendency is freed: the client moves in directions of growth,
+      autonomy, and fulfilment that are genuinely their own
+    - The client continues to grow and actualise beyond therapy
+
+    **Progress indicators:**
+    - Client uses more authentic, less defensive language about themselves
+    - Client reports feeling more alive, more present, more whole
+    - Client spontaneously offers vulnerable material without prompting
+    - Client demonstrates greater self-acceptance and self-compassion
+    - Client makes choices based on their own organismic valuing rather than
+      introjected conditions of worth
+    - Reduced rigidity in self-narratives; greater fluidity in self-description
+
+    {{ case_text }}
+
+    Respond with valid JSON matching this schema exactly:
+    {{ output_schema }}
+
+    Never assign diagnostic labels such as "major depressive disorder", "GAD",
+    "PTSD", "OCD", "BPD", "ADHD", or any DSM/ICD category. Describe objectives
+    using the language of self-theory and relational process.
+
+    Return ONLY the JSON object. No markdown fences.
+    No explanatory text before or after.

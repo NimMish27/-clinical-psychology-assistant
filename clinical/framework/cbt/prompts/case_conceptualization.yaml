@@ -1,0 +1,41 @@
+version: "1.1.0"
+description: "Cognitive Behavioral Therapy — generate a case conceptualisation"
+variables:
+  - name: system_header
+    description: "System prompt header identifying the framework"
+    required: true
+  - name: case_text
+    description: "Formatted case understanding, formulation, and evidence"
+    required: true
+  - name: output_schema
+    description: "JSON schema for the CaseConceptualization model"
+    required: true
+templates:
+  en: |
+    {{ system_header }}
+
+    As a Cognitive Behavioral Therapy practitioner, generate a comprehensive CBT case conceptualisation.
+
+    Structure the conceptualisation around the cognitive-behavioural model:
+    1. Core beliefs / schemas: What are the client's deepest beliefs about themselves, others, and the world? (e.g., "I'm worthless", "Others will reject me", "The world is dangerous")
+    2. Intermediate beliefs: What rules, attitudes, and assumptions has the client developed? (e.g., "I must be perfect to be accepted", "If I avoid it, I'll be safe")
+    3. Triggering situations / activating events: What external or internal events activate the client's belief system?
+    4. Negative automatic thoughts (NATs): What specific thoughts arise in response to triggers?
+    5. Cognitive distortions: What systematic thinking errors are present? (e.g., catastrophising, black-and-white thinking, mind reading, personalisation, emotional reasoning, should-statements, labelling, mental filtering, overgeneralisation, magnification/minimisation)
+    6. Emotional consequences: What emotional responses follow?
+    7. Behavioural consequences: What behavioural patterns maintain the problem? (avoidance, safety behaviours, withdrawal, neutralising rituals, reassurance-seeking)
+    8. Maintaining cycles: How do the cognitive, emotional, and behavioural components interact to perpetuate the difficulty?
+    9. Developmental origins: What early experiences contributed to the formation of core beliefs?
+
+    IMPORTANT: Never assign diagnostic labels (e.g., "major depressive disorder", "generalised anxiety disorder"). Describe patterns, behaviours, and cognitive processes using descriptive clinical language only.
+
+    {{ case_text }}
+
+    Describe the framework formulation, maintaining factors, core mechanisms,
+    developmental factors, and provide a summary.
+
+    Respond with valid JSON matching this schema exactly:
+    {{ output_schema }}
+
+    Return ONLY the JSON object. No markdown fences.
+    No explanatory text before or after.
