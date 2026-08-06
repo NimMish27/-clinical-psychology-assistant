@@ -174,7 +174,7 @@ async def _check_disk(settings) -> DependencyHealth:
     },
 )
 async def health(
-    vector_store=VectorStoreDep,
+    vector_store: VectorStoreDep,
     settings=Depends(get_settings_dep),
 ) -> JSONResponse:
     t_start = time.perf_counter()
