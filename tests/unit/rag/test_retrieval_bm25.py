@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-import pytest
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
-from rag.retrieval.bm25 import BM25Retriever, _SimpleBM25
-from rag.retrieval.bm25 import get_bm25_retriever
+import pytest
+
+from rag.retrieval.bm25 import BM25Retriever, _SimpleBM25, get_bm25_retriever
 
 
 @pytest.fixture
@@ -160,3 +161,98 @@ class TestBM25Retriever:
             a = get_bm25_retriever()
             b = get_bm25_retriever(force_reload=True)
             assert a is not b
+
+
+class _FakeCollection:
+    def __init__(self, docs: list[tuple[str, str, dict]]):
+        self._docs = docs
+
+    def get(self, **kwargs):
+        return {
+            "ids": [d[0] for d in self._docs],
+            "documents": [d[1] for d in self._docs],
+            "metadatas": [d[2] for d in self._docs],
+        }
+
+
+class TestBM25CollectionAware:
+    def test_named_collection_loads_its_corpus(self, bm25, tmp_path, monkeypatch):
+        docs = [
+            ("id1", "cognitive behavioral therapy", {"source": "kb1", "topic": "depression"}),
+            ("id2", "depression medication", {"source": "kb1", "topic": "depression"}),
+        ]
+        created: list = []
+
+        class _FakeVectorStore:
+            def __init__(self, collection_name=None, persist_dir=None):
+                self.collection_name = collection_name
+                self.persist_dir = persist_dir
+                self.collection = _FakeCollection(docs)
+                created.append(self)
+
+            def _resolve_collection(self):
+                return self.collection
+
+        monkeypatch.setattr("rag.vector_store.VectorStore", _FakeVectorStore)
+        monkeypatch.setattr(
+            "config.settings.get_settings",
+            lambda: SimpleNamespace(chroma=SimpleNamespace(persist_dir=tmp_path)),
+        )
+
+        results = bm25.search("therapy", n_results=10, collection_name="kb_act_2026-08")
+
+        assert len(results) == 2
+        assert bm25._loaded_collection == "kb_act_2026-08"
+        assert created[-1].collection_name == "kb_act_2026-08"
+        assert created[-1].persist_dir == tmp_path
+
+    def test_default_collection_uses_get_vector_store(self, bm25, monkeypatch):
+        class _FakeStore:
+            def __init__(self):
+                self.collection = _FakeCollection(
+                    [("id1", "cognitive behavioral therapy", {"source": "legacy"})]
+                )
+
+            def _resolve_collection(self):
+                return self.collection
+
+        default_store = _FakeStore()
+        monkeypatch.setattr("rag.vector_store.get_vector_store", lambda: default_store)
+
+        results = bm25.search("therapy", n_results=10)
+
+        assert len(results) == 1
+        assert bm25._loaded_collection is None
+
+    def test_switching_collection_reloads_corpus(self, bm25, tmp_path, monkeypatch):
+        created: list = []
+
+        def _docs(name: str):
+            if name == "kb_act_2026-08":
+                return [("id1", "acceptance and commitment therapy", {"source": "act"})]
+            return [("id2", "cognitive behavioral therapy", {"source": "cbt"})]
+
+        class _FakeVectorStore:
+            def __init__(self, collection_name=None, persist_dir=None):
+                self.collection_name = collection_name
+                self.collection = _FakeCollection(_docs(collection_name))
+                created.append(self)
+
+            def _resolve_collection(self):
+                return self.collection
+
+        monkeypatch.setattr("rag.vector_store.VectorStore", _FakeVectorStore)
+        monkeypatch.setattr(
+            "config.settings.get_settings",
+            lambda: SimpleNamespace(chroma=SimpleNamespace(persist_dir=tmp_path)),
+        )
+
+        bm25.search("therapy", collection_name="kb_act_2026-08")
+        assert len(created) == 1
+
+        bm25.search("therapy", collection_name="kb_cbt_2026-08")
+        assert len(created) == 2
+        assert bm25._loaded_collection == "kb_cbt_2026-08"
+
+        bm25.search("therapy", collection_name="kb_cbt_2026-08")
+        assert len(created) == 2  # unchanged collection must not reload
