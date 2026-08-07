@@ -9,7 +9,7 @@ readme = "README.md"
 [tool.ruff]
 target-version = "py311"
 line-length = 100
-src = [".", "api", "agents", "rag", "ingestion", "workflows", "config", "utils", "observability"]
+src = [".", "api", "agents", "rag", "ingestion", "workflows", "config", "utils", "observability", "knowledge_pipeline"]
 
 [tool.ruff.lint]
 select = [
@@ -31,7 +31,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["api", "agents", "rag", "ingestion", "workflows", "config", "utils", "logging"]
+known-first-party = ["api", "agents", "rag", "ingestion", "workflows", "config", "utils", "logging", "knowledge_pipeline"]
 
 # ── Mypy ──────────────────────────────────────────────────────────────────────
 [tool.mypy]

@@ -1,0 +1,93 @@
+# knowledge/rules/chunking-rules.yaml — Structure-aware parent-child chunking rules.
+#
+# These rules drive knowledge_pipeline.chunker. The ingest pipeline reads this
+# file at build time so the chunker behaviour is configurable without a code
+# change. Numeric budgets are mirrored in knowledge/rules/schema.yaml::chunking
+# — keep the two files in sync (schema.yaml remains the canonical schema).
+
+version: "1.0.0"
+
+# ── Token budget ────────────────────────────────────────────────────────────
+# Children are the unit embedded for precision retrieval (200–400 tokens).
+# Parents are the unit injected for generation context (1500–3000 tokens).
+budgets:
+  child:
+    min_tokens: 200
+    max_tokens: 400
+    overlap_tokens: 50
+  parent:
+    min_tokens: 1500
+    max_tokens: 3000
+
+# Token counting: tiktoken cl100k_base when available, else len(text) // 4.
+tokenizer:
+  provider: tiktoken
+  encoding: cl100k_base
+  fallback_ratio: 0.25          # approximate tokens = chars * ratio
+
+# ── Structure boundaries ────────────────────────────────────────────────────
+# Markdown heading levels that delimit units. Level 2 (##) starts a parent
+# unit (section); level 3 (###) starts a child candidate (subsection).
+structure:
+  heading_level_parent: 2       # "##" → new parent unit (section)
+  heading_level_child: 3        # "###" → new child candidate (subsection)
+  intro_section_source: front-matter
+  intro_section_label: from `section` field, else chapter_title
+
+# ── Never-split content ──────────────────────────────────────────────────────
+# These content_types are always kept as one child + one parent regardless of
+# size — splitting them would destroy clinical meaning.
+never_split:
+  content_types: [table, boxed-exercise, case-vignette]
+  behavior: "whole-unit child — budgets intentionally exceeded"
+
+# ── Child ID scheme (matches schema.yaml::derived_fields::chunk_id) ─────────
+id_scheme:
+  child_id_pattern: "{book_slug}:{chapter}:{section_slug}:{seq:03d}"
+  parent_id_pattern: "{book_slug}:{chapter}:{section_slug}"
+  section_slug_from: heading text (kebab-case, de-duplicated within a chapter)
+
+# ── Splitting rules ─────────────────────────────────────────────────────────
+splitting:
+  child_build_priority:            # tried in order when filling a child
+    - "### subsection block (never split internally)"
+    - "paragraph (\\n\\n boundary)"
+    - "sentence ('. ', '? ', '! ')"
+  oversize_atom:                   # single atom larger than child_max_tokens
+    - "split at sentence boundaries into [min, max] windows"
+    - "apply overlap_tokens=50 between consecutive windows"
+    - "windows of a never-split content_type are NOT split (see never_split)"
+  undersized_child:                # child below child_min_tokens
+    - "merge with the next sibling until >= min_tokens or section exhausted"
+  overlap:
+    scope: "within a split oversize atom only"
+    rationale: >-
+      Children aligned to structural boundaries (subsection / paragraph) are
+      already self-contained, so duplicating content across them would waste
+      embedding budget. Overlap is applied only when a single oversize atom
+      is cut mid-sentence-stream.
+
+# ── Metadata inheritance ─────────────────────────────────────────────────────
+metadata:
+  inherited_chapter_level: [framework, book_slug, book_title, authors, edition,
+    publication_year, publisher, isbn, language, chapter, chapter_title,
+    content_type, citation_ids, confidence]
+  per_parent: [section]
+  per_child: [seq, parent_id, content_hash, token_count]
+  controlled_vocab_storage:
+    rule: >-
+      ChromaDB 1.5.x rejects operator-form where clauses ($eq/$in) server-side
+      and only implicit equality is filterable, so each controlled-vocab field
+      (topic / intervention / symptom / population) is stored as a SINGLE scalar
+      primary value in its canonical metadata key; when the source declares
+      multiple values the full list is preserved under "{field}_all".
+    examples:
+      - "topic: psychological-flexibility  (primary scalar)"
+      - "topic_all: [psychological-flexibility, values]  (full set for audit)"
+
+# ── Output artifacts (built at knowledge/built/) ─────────────────────────────
+outputs:
+  chunks_jsonl: "knowledge/built/chunks.jsonl"      # one child per line
+  parents_jsonl: "knowledge/built/parents.jsonl"    # one section per line
+  hash_registry: "knowledge/built/hash_registry.json"
+  line_format: "one JSON object per line, sorted keys, UTF-8"
