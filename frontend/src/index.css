@@ -456,3 +456,167 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-text-secondary);
 }
+
+
+/* �?"�?" Chat controls �?"�?" */
+
+.chat-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.chat-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+
+.chat-control select {
+  padding: 5px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.chat-control select:disabled,
+.chat-control-inline input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.chat-control-inline {
+  cursor: pointer;
+  user-select: none;
+}
+
+/* �?"�?" Knowledge base sections �?"�?" */
+
+.kb-section {
+  margin-bottom: 28px;
+  padding: 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.kb-section h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.kb-hint {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 14px;
+}
+
+.kb-framework-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.kb-framework-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.kb-framework-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.kb-framework-meta {
+  display: flex;
+  gap: 14px;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.kb-rebuild-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.kb-rebuild-msg {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+
+.upload-meta-fields {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.upload-meta-fields .chat-input {
+  flex: 1;
+  min-width: 180px;
+}
+
+.kb-doc-list {
+  margin-top: 16px;
+}
+
+.kb-doc-list h5 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.kb-doc-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  margin-bottom: 6px;
+}
+
+.kb-doc-info .detail {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.kb-delete-btn {
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  color: var(--color-error);
+  background: transparent;
+  border: 1px solid var(--color-error);
+  border-radius: var(--radius);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.kb-delete-btn:hover {
+  background: var(--color-error);
+  color: #fff;
+}
+
+.kb-delete-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

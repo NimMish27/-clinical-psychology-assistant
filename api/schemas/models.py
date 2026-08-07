@@ -20,9 +20,12 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator
+
+# Curated clinical frameworks with their own knowledge bases.
+FrameworkName = Literal["cbt", "act", "humanistic"]
 
 
 # ── Shared sub-models ──────────────────────────────────────────────────────────
@@ -72,6 +75,12 @@ class ChatRequest(BaseModel):
         source_filter:  Restrict retrieval to a specific source document.
                         Example: ``"DSM5.pdf"``
         page_range:     Restrict retrieval to a page range ``[start, end]``.
+        framework:      Restrict retrieval to a curated clinical framework's
+                        knowledge base (``cbt``, ``act``, ``humanistic``).
+                        Defaults to the general clinical knowledge base.
+        include_user_documents: When True, also retrieve from the user's
+                        uploaded documents collection and merge + rerank the
+                        results alongside the curated knowledge.
         stream:         Reserved for future streaming support. Currently ignored.
     """
     query: str = Field(
@@ -104,6 +113,15 @@ class ChatRequest(BaseModel):
         max_length=2,
         description="Inclusive [start, end] page range for retrieval",
         examples=[[50, 100]],
+    )
+    framework: FrameworkName | None = Field(
+        None,
+        description="Curated clinical framework to scope retrieval to",
+        examples=["act"],
+    )
+    include_user_documents: bool = Field(
+        False,
+        description="Merge and rerank results from the user's uploaded documents",
     )
     stream: bool = Field(
         False,
@@ -311,3 +329,78 @@ class ClinicalAnalyzeResponse(BaseModel):
     elapsed_ms: float = Field(default=0.0, ge=0.0)
 
     model_config = {"frozen": True}
+
+
+# ── /kb ───────────────────────────────────────────────────────────────────────
+
+class KbCollectionInfo(BaseModel):
+    """Status of one curated clinical framework's knowledge base."""
+
+    framework: str = Field(..., description="Framework slug, e.g. 'act'")
+    built: bool = Field(False, description="True when a built collection is active")
+    collection: str | None = Field(None, description="Active ChromaDB collection name")
+    index_version: str | None = Field(None, description="Index version, e.g. '2026-08'")
+    chunk_count: int | None = Field(None, ge=0, description="Stored chunk count")
+    built_at: str | None = Field(None, description="ISO timestamp of the last build")
+    books: list[str] = Field(default_factory=list, description="Curated book slugs")
+
+
+class KbCollectionsResponse(BaseModel):
+    """Response body for ``GET /kb/collections``."""
+
+    collections: list[KbCollectionInfo]
+
+
+class KbRebuildRequest(BaseModel):
+    """Request body for ``POST /kb/rebuild``."""
+
+    framework: FrameworkName | None = Field(
+        None,
+        description="Restrict the rebuild to one framework. None rebuilds all curated sources.",
+    )
+
+
+class KbRebuildResponse(BaseModel):
+    """Response body for ``POST /kb/rebuild``."""
+
+    status: Literal["ok", "failed"] = Field(
+        ...,
+        description="ok when the build+index succeeded, failed when validation errored",
+    )
+    built_at: str | None = None
+    source_files: list[str] = Field(default_factory=list)
+    parents: int = 0
+    children: int = 0
+    total_tokens: int = 0
+    errors: list[str] = Field(default_factory=list)
+    skipped: list[str] = Field(default_factory=list)
+    collections: list[dict[str, Any]] = Field(
+        default_factory=list,
+        description="Active framework collections after indexing",
+    )
+
+
+class KbDocumentSummary(BaseModel):
+    """One uploaded document in a user collection."""
+
+    source: str = Field(..., description="Source filename")
+    chunks: int = Field(0, ge=0, description="Number of stored chunks")
+    user: str | None = Field(None, description="Uploader tag")
+    project: str | None = Field(None, description="Project tag")
+    document_type: str | None = Field(None, description="Document type tag")
+    upload_date: str | None = Field(None, description="Upload date (ISO)")
+
+
+class KbDocumentsResponse(BaseModel):
+    """Response body for ``GET /kb/documents``."""
+
+    collection: str = Field(..., description="Collection that was listed")
+    sources: list[KbDocumentSummary] = Field(default_factory=list)
+
+
+class KbDeleteResponse(BaseModel):
+    """Response body for ``DELETE /kb/documents``."""
+
+    collection: str = Field(..., description="Collection the source was removed from")
+    source: str = Field(..., description="Source filename removed")
+    deleted: int = Field(0, ge=0, description="Number of chunks deleted")

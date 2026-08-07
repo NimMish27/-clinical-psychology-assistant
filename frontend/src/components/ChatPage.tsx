@@ -1,5 +1,10 @@
 import { useState, useRef, useEffect } from "react";
-import { sendChatMessage, type ChatResponse } from "../api/client";
+import {
+  FRAMEWORKS,
+  sendChatMessage,
+  type ChatResponse,
+  type Framework,
+} from "../api/client";
 
 interface Message {
   role: "user" | "assistant";
@@ -16,6 +21,8 @@ export default function ChatPage() {
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [framework, setFramework] = useState<Framework | "">("");
+  const [includeDocs, setIncludeDocs] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -31,7 +38,12 @@ export default function ChatPage() {
     setLoading(true);
 
     try {
-      const res = await sendChatMessage(q);
+      const res = await sendChatMessage(
+        q,
+        5,
+        framework || null,
+        includeDocs,
+      );
       setMessages((m) => [
         ...m,
         { role: "assistant", text: res.answer, sources: res.sources },
@@ -51,6 +63,33 @@ export default function ChatPage() {
 
   return (
     <div className="chat-container">
+      <div className="chat-controls">
+        <label className="chat-control">
+          <span>Knowledge base</span>
+          <select
+            value={framework}
+            onChange={(e) => setFramework(e.target.value as Framework | "")}
+            disabled={loading}
+          >
+            <option value="">General</option>
+            {FRAMEWORKS.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="chat-control chat-control-inline">
+          <input
+            type="checkbox"
+            checked={includeDocs}
+            onChange={(e) => setIncludeDocs(e.target.checked)}
+            disabled={loading}
+          />
+          <span>Include my documents</span>
+        </label>
+      </div>
+
       <div className="messages">
         {messages.map((msg, i) => (
           <div key={i} className={`message ${msg.role}`}>
