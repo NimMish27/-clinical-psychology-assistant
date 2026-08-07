@@ -216,13 +216,16 @@ class BM25Retriever:
         return len(self._corpus)
 
     def __repr__(self) -> str:
-        return f"BM25Retriever(k1={self._k1}, b={self._b}, loaded={self._loaded}, docs={len(self._corpus)})"
+        return (
+            f"BM25Retriever(k1={self._k1}, b={self._b}, "
+            f"loaded={self._loaded}, docs={len(self._corpus)})"
+        )
 
 
 class _SimpleBM25:
     """Minimal BM25 implementation when rank_bm25 is not installed."""
 
-    def __init__(self, corpus: list[list[str]], k1: float = 1.5, b: float = 0.75):
+    def __init__(self, corpus: list[list[str]], k1: float = 1.5, b: float = 0.75) -> None:
         self._k1 = k1
         self._b = b
         self._corpus = corpus
@@ -230,7 +233,6 @@ class _SimpleBM25:
         self._avgdl = sum(self._doc_len) / len(corpus) if corpus else 0.0
         self._nd = len(corpus)
 
-        from collections import Counter
         self._df: dict[str, int] = {}
         for doc in corpus:
             for term in set(doc):
