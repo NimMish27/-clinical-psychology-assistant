@@ -95,6 +95,24 @@ export function ChevronRightIcon(props: IconProps) {
   );
 }
 
+export function ChevronDownIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  );
+}
+
+export function LayersIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z" />
+      <path d="m22 12.08-8.6 3.92a2 2 0 0 1-1.66 0L3.14 12.08" />
+      <path d="m22 17.08-8.6 3.92a2 2 0 0 1-1.66 0L3.14 17.08" />
+    </svg>
+  );
+}
+
 export function ChevronLeftIcon(props: IconProps) {
   return (
     <svg {...base(props)}>

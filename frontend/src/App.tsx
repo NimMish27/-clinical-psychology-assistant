@@ -3,11 +3,12 @@ import Shell from "./components/Shell";
 import { NavContext } from "./lib/nav";
 import type { Route } from "./lib/types";
 import { CommandPaletteProvider, ToastProvider, type PaletteAction } from "./ui/primitives";
-import { BookIcon, FolderIcon, GridIcon, LibraryIcon, SettingsIcon, ShieldIcon } from "./ui/icons";
+import { BookIcon, FolderIcon, GridIcon, LayersIcon, LibraryIcon, SettingsIcon, ShieldIcon } from "./ui/icons";
 import HomeDashboard from "./pages/HomeDashboard";
 import CaseIndexPage from "./pages/CaseIndexPage";
 import CaseWorkspacePage from "./pages/CaseWorkspacePage";
 import EvidencePage from "./pages/EvidencePage";
+import FrameworksPage from "./pages/FrameworksPage";
 import KnowledgeBasePage from "./pages/KnowledgeBasePage";
 import SafetyPage from "./pages/SafetyPage";
 import SettingsPage from "./pages/SettingsPage";
@@ -41,6 +42,7 @@ export default function App() {
       { id: "g-ws", label: "Go to Workspace", keywords: "home dashboard overview", icon: <GridIcon />, action: () => openSection("workspace") },
       { id: "g-cases", label: "Go to Case Index", keywords: "cases clients index", icon: <FolderIcon />, action: toCasesIndex },
       { id: "g-evidence", label: "Open Evidence Explorer", keywords: "literature search evidence ask", icon: <LibraryIcon />, action: () => openSection("evidence") },
+      { id: "g-frameworks", label: "Open Framework Cards", keywords: "frameworks cards compare cbt act dbt", icon: <LayersIcon />, action: () => openSection("frameworks") },
       { id: "g-kb", label: "Open Knowledge Base", keywords: "knowledge documents frameworks", icon: <BookIcon />, action: () => openSection("knowledge") },
       { id: "g-safety", label: "Open Safety Center", keywords: "safety risk checklist signoff", icon: <ShieldIcon />, action: () => openSection("safety") },
       { id: "g-settings", label: "Open Settings", keywords: "settings preferences", icon: <SettingsIcon />, action: () => openSection("settings") },
@@ -60,6 +62,8 @@ export default function App() {
     page = route.caseId ? <CaseWorkspacePage caseId={route.caseId} /> : <CaseIndexPage />;
   } else if (route.section === "evidence") {
     page = <EvidencePage />;
+  } else if (route.section === "frameworks") {
+    page = <FrameworksPage />;
   } else if (route.section === "knowledge") {
     page = <KnowledgeBasePage />;
   } else if (route.section === "safety") {

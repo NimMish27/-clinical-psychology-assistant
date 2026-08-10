@@ -4,6 +4,7 @@ export type Section =
   | "workspace"
   | "cases"
   | "evidence"
+  | "frameworks"
   | "knowledge"
   | "safety"
   | "settings";

@@ -10,6 +10,7 @@ import {
   DatabaseIcon,
   FolderIcon,
   GridIcon,
+  LayersIcon,
   LibraryIcon,
   SearchIcon,
   SettingsIcon,
@@ -21,6 +22,7 @@ const RAIL_ITEMS = [
   { section: "workspace", label: "Workspace", icon: GridIcon },
   { section: "cases", label: "Cases", icon: FolderIcon },
   { section: "evidence", label: "Evidence", icon: LibraryIcon },
+  { section: "frameworks", label: "Frameworks", icon: LayersIcon },
   { section: "knowledge", label: "Knowledge", icon: BookIcon },
   { section: "safety", label: "Safety", icon: ShieldIcon },
   { section: "settings", label: "Settings", icon: SettingsIcon },
@@ -94,6 +96,14 @@ function SectionSidebar() {
       items: [
         { id: "explorer", label: "Evidence Explorer" },
         { id: "saved", label: "Saved searches" },
+      ],
+    },
+    frameworks: {
+      head: "Frameworks",
+      sub: "Compare",
+      items: [
+        { id: "cards", label: "Framework cards" },
+        { id: "evd", label: "Evidence mapping" },
       ],
     },
     knowledge: {
