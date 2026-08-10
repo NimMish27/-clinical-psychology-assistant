@@ -1,11 +1,13 @@
 import { createContext, useContext } from "react";
 import type { CaseTab, Route, Section } from "./types";
+import type { FrameworkCardId } from "./frameworks";
 
 export interface NavState {
   route: Route;
   navigate: (route: Route) => void;
   openSection: (section: Section) => void;
   openCase: (caseId: string, tab?: CaseTab) => void;
+  openFramework: (frameworkId: FrameworkCardId) => void;
   toCasesIndex: () => void;
 }
 
@@ -14,6 +16,7 @@ export const NavContext = createContext<NavState>({
   navigate: () => {},
   openSection: () => {},
   openCase: () => {},
+  openFramework: () => {},
   toCasesIndex: () => {},
 });
 

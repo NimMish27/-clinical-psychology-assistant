@@ -56,4 +56,5 @@ export interface Route {
   section: Section;
   caseId?: string;
   caseTab?: CaseTab;
+  frameworkId?: string;
 }

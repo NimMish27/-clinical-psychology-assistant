@@ -1,6 +1,6 @@
 import { useState, type CSSProperties, type ReactNode } from "react";
 import type { FrameworkCardData, FrameworkCardId } from "../lib/frameworks";
-import { BookIcon, ChevronDownIcon } from "./icons";
+import { BookIcon, ChevronDownIcon, ChevronRightIcon } from "./icons";
 
 const GLYPHS: Record<FrameworkCardId, ReactNode> = {
   cbt: (
@@ -76,7 +76,13 @@ function confidenceTone(confidence: number): string {
   return "text-stone-600";
 }
 
-export default function FrameworkCard({ data }: { data: FrameworkCardData }) {
+export default function FrameworkCard({
+  data,
+  onOpen,
+}: {
+  data: FrameworkCardData;
+  onOpen?: () => void;
+}) {
   const [expanded, setExpanded] = useState(false);
   const { id, name, tagline, description, focus, whenToUse, tags, color, confidence, evidenceCount, featured } = data;
   const pct = Math.round(confidence * 100);
@@ -86,7 +92,16 @@ export default function FrameworkCard({ data }: { data: FrameworkCardData }) {
   return (
     <section
       style={accent}
-      className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/70 bg-white/60 p-5 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_10px_30px_-12px_rgba(15,23,42,0.12)] backdrop-blur-xl transition-all duration-300 ease-out hover:-translate-y-1 hover:border-white/90 hover:shadow-[0_2px_4px_rgba(15,23,42,0.04),0_20px_48px_-16px_rgba(15,23,42,0.24)]"
+      onClick={onOpen}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if ((e.key === "Enter" || e.key === " ") && onOpen) {
+          e.preventDefault();
+          onOpen();
+        }
+      }}
+      className="group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-white/70 bg-white/60 p-5 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_10px_30px_-12px_rgba(15,23,42,0.12)] backdrop-blur-xl transition-all duration-300 ease-out hover:-translate-y-1 hover:border-white/90 hover:shadow-[0_2px_4px_rgba(15,23,42,0.04),0_20px_48px_-16px_rgba(15,23,42,0.24)]"
     >
       {/* coloured glow */}
       <div
@@ -125,7 +140,10 @@ export default function FrameworkCard({ data }: { data: FrameworkCardData }) {
         </div>
 
         <button
-          onClick={() => setExpanded((e) => !e)}
+          onClick={(e) => {
+            e.stopPropagation();
+            setExpanded((prev) => !prev);
+          }}
           aria-expanded={expanded}
           aria-label={expanded ? "Collapse framework details" : "Expand framework details"}
           title={expanded ? "Collapse" : "Expand"}
@@ -188,6 +206,18 @@ export default function FrameworkCard({ data }: { data: FrameworkCardData }) {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Open workspace */}
+      <div className="relative mt-4 flex items-center justify-between border-t border-stone-200/60 pt-3">
+        <span className="text-[11px] font-medium text-stone-400">Framework workspace</span>
+        <span
+          className="inline-flex items-center gap-1 text-xs font-semibold transition-all duration-200"
+          style={{ color }}
+        >
+          Open
+          <ChevronRightIcon className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
+        </span>
       </div>
     </section>
   );

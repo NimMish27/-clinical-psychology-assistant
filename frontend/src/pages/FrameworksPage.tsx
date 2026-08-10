@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { fetchKbCollections, type KbCollectionInfo } from "../api/client";
 import { FRAMEWORK_CARDS, FRAMEWORK_ID_TO_KB } from "../lib/frameworks";
+import { useNav } from "../lib/nav";
 import FrameworkCard from "../ui/FrameworkCard";
 import { DatabaseIcon, LayersIcon, ShieldIcon, SparklesIcon } from "../ui/icons";
 
 export default function FrameworksPage() {
+  const { openFramework } = useNav();
   const [collections, setCollections] = useState<KbCollectionInfo[] | null>(null);
 
   useEffect(() => {
@@ -79,7 +81,7 @@ export default function FrameworksPage() {
         {/* Card grid */}
         <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {FRAMEWORK_CARDS.map((fw) => (
-            <FrameworkCard key={fw.id} data={fw} />
+            <FrameworkCard key={fw.id} data={fw} onOpen={() => openFramework(fw.id)} />
           ))}
         </div>
 

@@ -9,6 +9,7 @@ import CaseIndexPage from "./pages/CaseIndexPage";
 import CaseWorkspacePage from "./pages/CaseWorkspacePage";
 import EvidencePage from "./pages/EvidencePage";
 import FrameworksPage from "./pages/FrameworksPage";
+import FrameworkWorkspacePage from "./pages/FrameworkWorkspacePage";
 import KnowledgeBasePage from "./pages/KnowledgeBasePage";
 import SafetyPage from "./pages/SafetyPage";
 import SettingsPage from "./pages/SettingsPage";
@@ -24,6 +25,10 @@ export default function App() {
     setRoute({ section: "cases", caseId, caseTab: (caseTab ?? "overview") as never });
   }, []);
 
+  const openFramework = useCallback((frameworkId: string) => {
+    setRoute({ section: "frameworks", frameworkId });
+  }, []);
+
   const toCasesIndex = useCallback(() => setRoute({ section: "cases" }), []);
 
   const nav = useMemo(
@@ -32,9 +37,10 @@ export default function App() {
       navigate: setRoute,
       openSection,
       openCase,
+      openFramework,
       toCasesIndex,
     }),
-    [route, openSection, openCase, toCasesIndex],
+    [route, openSection, openCase, openFramework, toCasesIndex],
   );
 
   const defaultCommands = useCallback(
@@ -63,7 +69,7 @@ export default function App() {
   } else if (route.section === "evidence") {
     page = <EvidencePage />;
   } else if (route.section === "frameworks") {
-    page = <FrameworksPage />;
+    page = route.frameworkId ? <FrameworkWorkspacePage frameworkId={route.frameworkId} /> : <FrameworksPage />;
   } else if (route.section === "knowledge") {
     page = <KnowledgeBasePage />;
   } else if (route.section === "safety") {
