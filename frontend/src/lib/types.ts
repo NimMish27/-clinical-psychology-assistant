@@ -57,4 +57,5 @@ export interface Route {
   caseId?: string;
   caseTab?: CaseTab;
   frameworkId?: string;
+  frameworkMode?: "cards" | "compare";
 }

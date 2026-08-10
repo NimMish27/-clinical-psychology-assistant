@@ -74,13 +74,13 @@ function NavRail() {
 /* ── Section sidebar ──────────────────────────────────────────────── */
 
 function SectionSidebar() {
-  const { route } = useNav();
+  const { route, navigate } = useNav();
 
   if (route.section === "cases") {
     return <CasesSidebar />;
   }
 
-  const config: Record<string, { head: string; sub: string; items: Array<{ id: string; label: string }> }> = {
+  const config: Record<string, { head: string; sub: string; items: Array<{ id: string; label: string; action?: () => void }> }> = {
     workspace: {
       head: "Workspace",
       sub: "Today",
@@ -102,8 +102,8 @@ function SectionSidebar() {
       head: "Frameworks",
       sub: "Compare",
       items: [
-        { id: "cards", label: "Framework cards" },
-        { id: "evd", label: "Evidence mapping" },
+        { id: "cards", label: "Framework cards", action: () => navigate({ section: "frameworks", frameworkMode: "cards" }) },
+        { id: "compare", label: "Compare frameworks", action: () => navigate({ section: "frameworks", frameworkMode: "compare" }) },
       ],
     },
     knowledge: {
@@ -136,6 +136,8 @@ function SectionSidebar() {
   };
 
   const { head, sub, items } = config[route.section];
+  const frameworksActive =
+    route.section === "frameworks" ? (route.frameworkMode === "compare" ? "compare" : "cards") : null;
   return (
     <aside className="section-sidebar">
       <div className="sidebar-section-head">
@@ -143,11 +145,18 @@ function SectionSidebar() {
         <h2>{head}</h2>
       </div>
       <div className="sidebar-nav">
-        {items.map((item, i) => (
-          <button key={item.id} className={`sidebar-item ${i === 0 ? "active" : ""}`}>
-            {item.label}
-          </button>
-        ))}
+        {items.map((item, i) => {
+          const active = frameworksActive ? frameworksActive === item.id : i === 0;
+          return (
+            <button
+              key={item.id}
+              className={`sidebar-item ${active ? "active" : ""}`}
+              onClick={item.action}
+            >
+              {item.label}
+            </button>
+          );
+        })}
       </div>
     </aside>
   );

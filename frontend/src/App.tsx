@@ -9,6 +9,7 @@ import CaseIndexPage from "./pages/CaseIndexPage";
 import CaseWorkspacePage from "./pages/CaseWorkspacePage";
 import EvidencePage from "./pages/EvidencePage";
 import FrameworksPage from "./pages/FrameworksPage";
+import FrameworkComparePage from "./pages/FrameworkComparePage";
 import FrameworkWorkspacePage from "./pages/FrameworkWorkspacePage";
 import KnowledgeBasePage from "./pages/KnowledgeBasePage";
 import SafetyPage from "./pages/SafetyPage";
@@ -69,7 +70,13 @@ export default function App() {
   } else if (route.section === "evidence") {
     page = <EvidencePage />;
   } else if (route.section === "frameworks") {
-    page = route.frameworkId ? <FrameworkWorkspacePage frameworkId={route.frameworkId} /> : <FrameworksPage />;
+    if (route.frameworkId) {
+      page = <FrameworkWorkspacePage frameworkId={route.frameworkId} />;
+    } else if (route.frameworkMode === "compare") {
+      page = <FrameworkComparePage />;
+    } else {
+      page = <FrameworksPage />;
+    }
   } else if (route.section === "knowledge") {
     page = <KnowledgeBasePage />;
   } else if (route.section === "safety") {

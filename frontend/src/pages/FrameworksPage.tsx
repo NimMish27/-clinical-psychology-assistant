@@ -3,10 +3,10 @@ import { fetchKbCollections, type KbCollectionInfo } from "../api/client";
 import { FRAMEWORK_CARDS, FRAMEWORK_ID_TO_KB } from "../lib/frameworks";
 import { useNav } from "../lib/nav";
 import FrameworkCard from "../ui/FrameworkCard";
-import { DatabaseIcon, LayersIcon, ShieldIcon, SparklesIcon } from "../ui/icons";
+import { DatabaseIcon, GitCompareIcon, LayersIcon, ShieldIcon, SparklesIcon } from "../ui/icons";
 
 export default function FrameworksPage() {
-  const { openFramework } = useNav();
+  const { openFramework, navigate } = useNav();
   const [collections, setCollections] = useState<KbCollectionInfo[] | null>(null);
 
   useEffect(() => {
@@ -53,6 +53,12 @@ export default function FrameworksPage() {
               and the literature behind each.
             </p>
           </div>
+          <button
+            onClick={() => navigate({ section: "frameworks", frameworkMode: "compare" })}
+            className="inline-flex items-center gap-2 rounded-xl bg-stone-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-stone-800"
+          >
+            <GitCompareIcon className="h-4 w-4" /> Compare frameworks
+          </button>
         </header>
 
         {/* Summary strip */}
