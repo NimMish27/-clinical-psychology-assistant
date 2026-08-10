@@ -1541,6 +1541,116 @@ button {
   gap: var(--space-4);
 }
 
+/* Case Analysis */
+
+.analysis-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(320px, 1fr);
+  gap: var(--space-4);
+  align-items: start;
+}
+@media (max-width: 1100px) {
+  .analysis-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.analysis-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+.analysis-lead {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+.analysis-score {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+.analysis-sub {
+  font-size: var(--text-xs);
+  color: var(--c-ink-3);
+}
+.analysis-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.analysis-matches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: var(--space-2);
+}
+.analysis-reasons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+.analysis-reasons li {
+  position: relative;
+  padding-left: 14px;
+  font-size: var(--text-sm);
+  color: var(--c-ink-2);
+  line-height: 1.55;
+}
+.analysis-reasons li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 7px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--c-primary);
+  opacity: 0.55;
+}
+.analysis-fw-card {
+  padding: var(--space-4) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.analysis-fw-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.analysis-fw-name {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-md);
+  font-weight: 650;
+}
+.analysis-fw-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.analysis-metrics {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+.analysis-preview-row {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: var(--space-4);
+}
+@media (max-width: 1000px) {
+  .analysis-preview-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 .list-row {
   display: flex;
   align-items: center;

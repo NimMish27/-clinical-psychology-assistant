@@ -3,6 +3,7 @@ import { searchEvidence, type EvidenceItem, type EvidenceSearchResponse } from "
 import { useNav, CASE_TABS } from "../lib/nav";
 import { getCase } from "../lib/sampleData";
 import { Alert, Badge, Button, Card, EmptyState, ErrorState, Meter, Panel, Ring, Skeleton, StageBar, Tabs } from "../ui/primitives";
+import CaseAnalysisPage from "./CaseAnalysisPage";
 import {
   AlertTriangleIcon,
   BookIcon,
@@ -76,6 +77,7 @@ export default function CaseWorkspacePage({ caseId }: { caseId: string }) {
 
       <div className="rise" key={tab}>
         {tab === "overview" && <OverviewTab caseId={caseId} />}
+        {tab === "analysis" && <CaseAnalysisPage caseId={caseId} />}
         {tab === "assessment" && <AssessmentTab caseId={caseId} />}
         {tab === "evidence" && <CaseEvidenceTab caseId={caseId} />}
         {tab === "formulation" && <FormulationTab />}

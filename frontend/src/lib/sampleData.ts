@@ -22,6 +22,25 @@ export const CASES: CaseRecord[] = [
       "Muscle tension and restlessness",
       "Rumination loops at night",
     ],
+    symptoms: [
+      "Nightly rumination lasting 45–90 minutes",
+      "Onset insomnia, delayed sleep onset (1–2 h)",
+      "Generalized muscle tension, jaw clenching",
+      "Irritability during the workday",
+      "Restlessness, difficulty sitting still",
+    ],
+    stressors: [
+      "Promotion to lead role 18 months ago",
+      "High-stakes quarterly performance reviews",
+      "Single income household, two young children",
+      "Limited social support since relocation",
+    ],
+    protectiveFactors: [
+      "Strong engagement and treatment motivation",
+      "Supportive family network, no substance use",
+      "Physically active, regular exercise routine",
+      "No prior trauma history",
+    ],
     history:
       "Symptom onset ~18 months ago following a promotion. No prior mental health treatment. Family history of anxiety on maternal side.",
     goals: [
@@ -60,6 +79,22 @@ export const CASES: CaseRecord[] = [
     stageProgress: 22,
     color: "#0ea5e9",
     concerns: ["Persistent low-back pain 6 yrs", "Catastrophizing about flare-ups", "Activity avoidance"],
+    symptoms: [
+      "Chronic low-back pain (VAS 5–7/10)",
+      "Catastrophic cognitions about movement",
+      "Activity avoidance and deconditioning",
+      "Sleep disturbance from pain flare-ups",
+    ],
+    stressors: [
+      "Workplace injury and lost role as foreman",
+      "Ongoing workers' compensation process",
+      "Financial strain during rehabilitation",
+    ],
+    protectiveFactors: [
+      "Strong family support and stable marriage",
+      "History of physical resilience and fitness",
+      "Engaged in physiotherapy follow-up",
+    ],
     history:
       "Chronic musculoskeletal pain following workplace injury. Prior physio; limited psychological intervention.",
     goals: ["Increase values-based activity despite discomfort", "Practice defusion with pain-related thoughts"],
@@ -87,6 +122,22 @@ export const CASES: CaseRecord[] = [
     stageProgress: 18,
     color: "#10b981",
     concerns: ["Prolonged grief following loss", "Social withdrawal", "Low energy"],
+    symptoms: [
+      "Persistent sadness and longing for the deceased",
+      "Social withdrawal from friends and family",
+      "Low energy and reduced daily functioning",
+      "Difficulty concentrating at work",
+    ],
+    stressors: [
+      "Loss of parent 8 months ago",
+      "Anniversary of loss approaching",
+      "Pressure to \u201cmove on\u201d from relatives",
+    ],
+    protectiveFactors: [
+      "Close sibling relationship",
+      "Faith community involvement",
+      "Supportive workplace, flexible hours",
+    ],
     history: "Loss of parent 8 months ago. Struggling to re-engage with routine.",
     goals: ["Explore grief narrative in safe space", "Reconnect with two valued relationships"],
     interventions: ["Person-centered exploration", "Empathic reflection"],
@@ -112,6 +163,22 @@ export const CASES: CaseRecord[] = [
     stageProgress: 71,
     color: "#f59e0b",
     concerns: ["Anhedonia", "Reduced appetite", "Low motivation"],
+    symptoms: [
+      "Anhedonia across work and leisure",
+      "Reduced appetite, ~2 kg weight loss",
+      "Low motivation and psychomotor slowing",
+      "Early-morning wakening",
+    ],
+    stressors: [
+      "Layoff and 4-month job search",
+      "Financial uncertainty for the household",
+      "Social isolation since leaving work",
+    ],
+    protectiveFactors: [
+      "Responsive to CBT in early phase",
+      "Supportive partner and children",
+      "No active risk concerns",
+    ],
     history: "Episode ~4 months; responsive to CBT so far. Paused for vacation.",
     goals: ["Behavioral activation with 3 weekly activities", "Identify early-warning signs"],
     interventions: ["Behavioral activation", "Activity scheduling"],
@@ -137,6 +204,22 @@ export const CASES: CaseRecord[] = [
     stageProgress: 92,
     color: "#ef4444",
     concerns: ["Recurrent panic attacks", "Avoiding public transport", "Fear of losing control"],
+    symptoms: [
+      "Recurrent unexpected panic attacks (1–2/week)",
+      "Anticipatory anxiety about commuting",
+      "Interoceptive hypersensitivity, palpitations",
+      "Agoraphobic avoidance of public transport",
+    ],
+    stressors: [
+      "Onset during a first-year university exam",
+      "Pressure to commute to campus alone",
+      "Fear of judgment during panic episodes",
+    ],
+    protectiveFactors: [
+      "Insight into triggers and strong motivation",
+      "Supportive flatmates and family nearby",
+      "Early engagement, three exposures completed",
+    ],
     history: "Onset following a panic episode at university. Now avoids commuting alone.",
     goals: ["Complete 4 interoceptive exposure sessions", "Attend class solo via train"],
     interventions: ["Interoceptive exposure", "In-vivo exposure hierarchy", "Psychoeducation"],

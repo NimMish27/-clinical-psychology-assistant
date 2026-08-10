@@ -31,6 +31,7 @@ export const STAGE_LABELS: Record<string, string> = {
 
 export const CASE_TABS: Array<{ id: CaseTab; label: string }> = [
   { id: "overview", label: "Overview" },
+  { id: "analysis", label: "Analysis" },
   { id: "assessment", label: "Assessment" },
   { id: "evidence", label: "Evidence" },
   { id: "formulation", label: "Formulation" },

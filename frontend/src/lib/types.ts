@@ -12,6 +12,7 @@ export type CaseStage = "understanding" | "evidence" | "formulation" | "plan" | 
 
 export type CaseTab =
   | "overview"
+  | "analysis"
   | "assessment"
   | "evidence"
   | "formulation"
@@ -39,6 +40,9 @@ export interface ClinicalCase {
 
 export interface CaseRecord extends ClinicalCase {
   concerns: string[];
+  symptoms: string[];
+  stressors: string[];
+  protectiveFactors: string[];
   history: string;
   goals: string[];
   interventions: string[];
