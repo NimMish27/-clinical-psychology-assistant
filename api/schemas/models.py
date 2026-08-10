@@ -404,3 +404,103 @@ class KbDeleteResponse(BaseModel):
     collection: str = Field(..., description="Collection the source was removed from")
     source: str = Field(..., description="Source filename removed")
     deleted: int = Field(0, ge=0, description="Number of chunks deleted")
+
+
+# ── /evidence/search ──────────────────────────────────────────────────────────
+
+class EvidenceSearchRequest(BaseModel):
+    """Request body for ``POST /evidence/search``.
+
+    Retrieval-only literature search (no LLM generation). When ``framework``
+    is set, search is scoped to that curated knowledge base and the result
+    carries the framework evidence bundle (synthesis, key findings, gaps,
+    confidence). Otherwise the general clinical knowledge base is searched.
+    """
+
+    query: str = Field(
+        ...,
+        min_length=3,
+        max_length=2000,
+        description="Natural-language literature search query",
+        examples=["Acceptance and values work for chronic pain"],
+    )
+    framework: FrameworkName | None = Field(
+        None,
+        description="Curated clinical framework to scope the search to",
+        examples=["act"],
+    )
+    include_user_documents: bool = Field(
+        False,
+        description="Merge and rerank results from the user's uploaded documents",
+    )
+    n_results: int = Field(
+        default=5,
+        ge=1,
+        le=20,
+        description="Number of evidence items to return",
+    )
+    chapter: str | None = Field(None, max_length=128, description="Chapter filter")
+    topic: str | None = Field(None, max_length=128, description="Topic filter")
+    intervention: str | None = Field(None, max_length=128, description="Intervention filter")
+    symptom: str | None = Field(None, max_length=128, description="Symptom filter")
+    population: str | None = Field(None, max_length=128, description="Population filter")
+
+    @field_validator("query")
+    @classmethod
+    def query_not_whitespace(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("query must not be empty or whitespace-only.")
+        return v.strip()
+
+
+class EvidenceItem(BaseModel):
+    """One retrieved evidence item in an evidence search response."""
+
+    source: str = Field(..., description="Source document name")
+    content: str = Field(..., description="Evidence text content")
+    quality_rating: float | None = Field(None, ge=0.0, le=1.0, description="Relevance score [0, 1]")
+    framework: str | None = Field(None, description="Framework the item belongs to")
+    chapter: str | None = Field(None, description="Chapter within the source document")
+    topic: str | None = Field(None, description="Clinical topic")
+    intervention: str | None = Field(None, description="Intervention described")
+    symptom: str | None = Field(None, description="Symptom or presentation")
+    population: str | None = Field(None, description="Target population")
+    page: int = Field(0, description="Page number in the source document")
+    chunk_id: str = Field("", description="Chunk identifier in the vector store")
+    is_user_document: bool = Field(
+        False,
+        description="True when the item came from the user's uploaded documents",
+    )
+
+
+class EvidenceSearchResponse(BaseModel):
+    """Response body for ``POST /evidence/search``."""
+
+    query: str = Field(..., description="Echoed search query")
+    framework: str | None = Field(None, description="Framework the search was scoped to")
+    sources: list[EvidenceItem] = Field(
+        default_factory=list,
+        description="Retrieved evidence, sorted by descending relevance",
+    )
+    synthesis: str | None = Field(
+        None,
+        description="Integrated evidence summary (framework searches only)",
+    )
+    key_findings: list[str] = Field(default_factory=list, description="Principal findings")
+    evidence_gaps: list[str] = Field(
+        default_factory=list,
+        description="Areas where evidence is lacking",
+    )
+    confidence: float | None = Field(
+        None,
+        ge=0.0,
+        le=1.0,
+        description="Overall confidence in the evidence set",
+    )
+    total_candidates: int = Field(0, description="Candidates considered before ranking")
+    elapsed_ms: float = Field(0.0, description="Wall-clock retrieval time (ms)")
+    user_documents_included: bool = Field(False, description="Whether user documents were merged")
+    user_documents_returned: int = Field(
+        0,
+        description="How many user-document items survived ranking",
+    )

@@ -88,6 +88,46 @@ export interface KbDocumentsResponse {
   sources: KbDocumentSummary[];
 }
 
+export interface EvidenceItem {
+  source: string;
+  content: string;
+  quality_rating: number | null;
+  framework: string | null;
+  chapter: string | null;
+  topic: string | null;
+  intervention: string | null;
+  symptom: string | null;
+  population: string | null;
+  page: number;
+  chunk_id: string;
+  is_user_document: boolean;
+}
+
+export interface EvidenceSearchResponse {
+  query: string;
+  framework: string | null;
+  sources: EvidenceItem[];
+  synthesis: string | null;
+  key_findings: string[];
+  evidence_gaps: string[];
+  confidence: number | null;
+  total_candidates: number;
+  elapsed_ms: number;
+  user_documents_included: boolean;
+  user_documents_returned: number;
+}
+
+export interface EvidenceSearchOptions {
+  framework?: Framework | null;
+  includeUserDocuments?: boolean;
+  nResults?: number;
+  chapter?: string;
+  topic?: string;
+  intervention?: string;
+  symptom?: string;
+  population?: string;
+}
+
 async function parseError(res: Response): Promise<string> {
   const err = await res.json().catch(() => null);
   return err?.detail?.[0]?.msg || err?.detail || `HTTP ${res.status}`;
@@ -171,6 +211,27 @@ export async function deleteKbDocument(
     )}&source=${encodeURIComponent(source)}`,
     { method: "DELETE" },
   );
+  if (!res.ok) throw new Error(await parseError(res));
+  return res.json();
+}
+
+export async function searchEvidence(
+  query: string,
+  options: EvidenceSearchOptions = {},
+): Promise<EvidenceSearchResponse> {
+  const body: Record<string, unknown> = { query, n_results: options.nResults ?? 5 };
+  if (options.framework) body.framework = options.framework;
+  if (options.includeUserDocuments) body.include_user_documents = true;
+  for (const key of ["chapter", "topic", "intervention", "symptom", "population"] as const) {
+    const value = options[key];
+    if (value) body[key] = value;
+  }
+
+  const res = await fetch(`${BASE}/api/v1/evidence/search`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
   if (!res.ok) throw new Error(await parseError(res));
   return res.json();
 }

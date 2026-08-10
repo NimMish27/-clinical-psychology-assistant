@@ -445,3 +445,148 @@ class TestKbRouter:
         data = resp.json()
         assert data == {"collection": "user_documents", "source": "note.pdf", "deleted": 4}
         mock_store.delete_by_source.assert_called_once_with("note.pdf")
+
+
+# ═══════════════════════════════════════════════════════════════
+# /evidence/search — retrieval-only literature search
+# ═══════════════════════════════════════════════════════════════
+
+class TestEvidenceSearch:
+    def test_evidence_request_validation(self):
+        from api.schemas.models import EvidenceSearchRequest
+        import pydantic
+
+        req = EvidenceSearchRequest(query="Acceptance for chronic pain", framework="act")
+        assert req.framework == "act"
+        assert req.n_results == 5
+        with pytest.raises(pydantic.ValidationError):
+            EvidenceSearchRequest(query="   ")
+        with pytest.raises(pydantic.ValidationError):
+            EvidenceSearchRequest(query="Acceptance", framework="dbt")
+
+    def test_framework_evidence_returns_bundle(self, client):
+        mock_fw = MagicMock()
+        mock_fw.retrieve_async = AsyncMock(return_value=_act_evidence_result(2))
+
+        with patch("api.routers.chat._get_framework_retriever", return_value=mock_fw):
+            resp = client.post(
+                "/api/v1/evidence/search",
+                json={"query": "acceptance and values", "framework": "act"},
+            )
+
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["framework"] == "act"
+        assert len(data["sources"]) == 2
+        assert data["sources"][0]["source"] == "hayes2011.pdf"
+        assert data["synthesis"] == "Evidence supports ACT interventions."
+        assert data["key_findings"] == ["Psychological flexibility matters"]
+        assert data["confidence"] == 0.7
+        assert data["elapsed_ms"] == 12.3
+        # No LLM call on the framework path.
+        mock_fw.retrieve_async.assert_awaited_once()
+        args = mock_fw.retrieve_async.call_args
+        assert args.kwargs["filters"].framework == "act"
+
+    def test_framework_evidence_accepts_filters(self, client):
+        mock_fw = MagicMock()
+        mock_fw.retrieve_async = AsyncMock(return_value=_act_evidence_result(1))
+
+        with patch("api.routers.chat._get_framework_retriever", return_value=mock_fw):
+            resp = client.post(
+                "/api/v1/evidence/search",
+                json={
+                    "query": "acceptance and values",
+                    "framework": "act",
+                    "topic": "chronic-pain",
+                    "population": "adults",
+                },
+            )
+
+        assert resp.status_code == 200
+        args = mock_fw.retrieve_async.call_args
+        filters = args.kwargs["filters"]
+        assert filters.topic == "chronic-pain"
+        assert filters.population == "adults"
+
+    def test_generic_evidence_returns_items(self, client):
+        from api.dependencies import get_retriever_dep
+        from rag.retriever import RetrievalResult, RetrievedChunk
+
+        chunk = RetrievedChunk(
+            text="DSM-5 criterion text.",
+            source="DSM5.pdf",
+            page=12,
+            score=0.81,
+            chunk_id="dsm5__c0001",
+            rank=1,
+            metadata={"framework": None},
+        )
+        mock_retriever = MagicMock()
+        mock_retriever.aretrieve = AsyncMock(
+            return_value=RetrievalResult(
+                query="criteria",
+                chunks=[chunk],
+                total_candidates=6,
+                threshold_used=0.35,
+                n_results_requested=5,
+                elapsed_ms=8.0,
+                embedding_ms=3.0,
+                search_ms=5.0,
+            )
+        )
+        client.app.dependency_overrides[get_retriever_dep] = lambda: mock_retriever
+        try:
+            resp = client.post(
+                "/api/v1/evidence/search",
+                json={"query": "What are the criteria?"},
+            )
+        finally:
+            client.app.dependency_overrides.clear()
+
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["framework"] is None
+        assert data["sources"][0]["source"] == "DSM5.pdf"
+        assert data["sources"][0]["quality_rating"] == 0.81
+        assert data["synthesis"] is None
+        assert data["total_candidates"] == 6
+        assert data["elapsed_ms"] == 8.0
+
+    def test_include_user_documents_merges_and_reranks(self, client):
+        from rag.retriever import RetrievedChunk
+
+        user_chunk = RetrievedChunk(
+            text="User document clinical note.",
+            source="my-note.pdf",
+            page=1,
+            score=0.99,
+            chunk_id="user_1",
+            rank=1,
+            metadata={"user": "dr-smith"},
+        )
+
+        mock_fw = MagicMock()
+        mock_fw.retrieve_async = AsyncMock(return_value=_act_evidence_result(1))
+
+        with patch("api.routers.chat._get_framework_retriever", return_value=mock_fw), \
+             patch(
+                 "api.routers.chat._retrieve_user_documents",
+                 return_value=[user_chunk],
+             ):
+            resp = client.post(
+                "/api/v1/evidence/search",
+                json={
+                    "query": "acceptance and values",
+                    "framework": "act",
+                    "include_user_documents": True,
+                },
+            )
+
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["user_documents_included"] is True
+        assert data["user_documents_returned"] == 1
+        # The user chunk (0.99) outranks the ACT chunk (0.9).
+        assert data["sources"][0]["is_user_document"] is True
+        assert data["sources"][0]["source"] == "my-note.pdf"
