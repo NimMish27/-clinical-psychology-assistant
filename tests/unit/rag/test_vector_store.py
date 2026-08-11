@@ -730,6 +730,55 @@ class TestPeek:
         mock_collection.peek.assert_called_once_with(limit=7)
 
 
+# ── list_sources ───────────────────────────────────────────────────────────────
+
+class TestListSources:
+    def test_aggregates_by_source_with_tags(self, store, mock_chroma_module):
+        _, _, mock_collection = mock_chroma_module
+        mock_collection.count.return_value = 3
+        mock_collection.get.return_value = {
+            "metadatas": [
+                {
+                    "source": "note.pdf",
+                    "page": 1,
+                    "user": "dr-smith",
+                    "project": "clinic-a",
+                    "document_type": "case-note",
+                    "upload_date": "2026-08-07",
+                },
+                {"source": "note.pdf", "page": 2, "user": "dr-smith"},
+                {"source": "b.pdf", "page": 1},
+            ]
+        }
+
+        sources = store.list_sources()
+        assert len(sources) == 2
+        by_source = {s["source"]: s for s in sources}
+        assert by_source["note.pdf"]["chunks"] == 2
+        assert by_source["note.pdf"]["user"] == "dr-smith"
+        assert by_source["note.pdf"]["document_type"] == "case-note"
+        assert by_source["b.pdf"]["chunks"] == 1
+        assert by_source["b.pdf"]["user"] is None
+
+    def test_empty_collection(self, store, mock_chroma_module):
+        _, _, mock_collection = mock_chroma_module
+        mock_collection.count.return_value = 0
+        assert store.list_sources() == []
+        mock_collection.get.assert_not_called()
+
+    def test_sorted_case_insensitive(self, store, mock_chroma_module):
+        _, _, mock_collection = mock_chroma_module
+        mock_collection.count.return_value = 2
+        mock_collection.get.return_value = {
+            "metadatas": [
+                {"source": "Zebra.pdf"},
+                {"source": "alpha.pdf"},
+            ]
+        }
+        sources = store.list_sources()
+        assert [s["source"] for s in sources] == ["alpha.pdf", "Zebra.pdf"]
+
+
 # ── Singleton: get_vector_store ────────────────────────────────────────────────
 
 class TestGetVectorStore:

@@ -10,7 +10,7 @@ pydantic-settings==2.6.1        # BaseSettings with .env support
 
 # ── LangChain Ecosystem ───────────────────────────────────────────────────────
 langchain==0.3.7
-langchain-core==0.3.19
+langchain-core==0.3.21
 langchain-community==0.3.7      # Ollama LLM + ChromaDB integrations
 langgraph==0.2.45               # stateful agent workflows
 langchain-ollama==0.2.1         # first-party Ollama integration
@@ -39,6 +39,15 @@ pyyaml==6.0.2                   # YAML template file parsing
 
 # ── Observability ──────────────────────────────────────────────────────────────
 langfuse>=4.0.0                 # LLM observability and tracing
+# OpenTelemetry stack pinned consistently: chromadb 1.x needs
+# `_create_exp_backoff_generator` (removed in proto-common >=1.35), while a
+# proto-http >=1.38 would pull proto-common with `_exporter_metrics` and break
+# chromadb. 1.33.1 satisfies both langfuse and chromadb.
+opentelemetry-api==1.33.1
+opentelemetry-sdk==1.33.1
+opentelemetry-exporter-otlp-proto-common==1.33.1
+opentelemetry-exporter-otlp-proto-http==1.33.1
+opentelemetry-exporter-otlp-proto-grpc==1.33.1
 
 # ── Logging ───────────────────────────────────────────────────────────────────
 structlog==24.4.0               # structured JSON logging

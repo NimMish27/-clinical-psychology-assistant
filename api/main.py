@@ -47,7 +47,7 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from api.middleware import ProcessTimeMiddleware, RequestLoggingMiddleware
-from api.routers import chat, clinical, frameworks, health, ingest
+from api.routers import chat, clinical, evidence, frameworks, health, ingest, kb
 from api.schemas.models import ErrorDetail
 from app_logging.logger import get_logger, setup_logging
 
@@ -247,6 +247,8 @@ def create_app(*, settings=None) -> FastAPI:
     # ── Routers ───────────────────────────────────────────────────────────────
     app.include_router(chat.router,   prefix="/api/v1")
     app.include_router(ingest.router, prefix="/api/v1")
+    app.include_router(kb.router,     prefix="/api/v1")
+    app.include_router(evidence.router, prefix="/api/v1")
     app.include_router(health.router)
     app.include_router(clinical.router)
     app.include_router(frameworks.router)

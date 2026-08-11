@@ -593,6 +593,70 @@ class TestCBTRetrieverRetrieve:
         result = r.retrieve("CBT techniques")
         assert isinstance(result, CBTEvidenceResult)
 
+    @patch("clinical.retrieval.cbt_retriever._search_dense")
+    def test_retrieve_uses_framework_resolved_store(self, mock_search):
+        """Dense search must use the manifest.lock-resolved store and pass the
+        collection name to BM25 so both stages share the same collection."""
+        class _FakeStore:
+            collection_name = "kb_cbt_2026-08"
+
+        fake_store = _FakeStore()
+        r = CBTRetriever(n_results=5, similarity_threshold=0.0, enable_rerank=False)
+        mock_search.return_value = [
+            _MockQueryResult(
+                text="Cognitive restructuring is a core CBT technique for modifying automatic thoughts.",
+                score=0.85,
+                metadata={"framework": "cbt", "topic": "depression"},
+            ),
+        ]
+        bm25_mock = MagicMock(search=MagicMock(return_value=[]))
+
+        with patch(
+            "clinical.retrieval.cbt_retriever.resolve_framework_store",
+            return_value=(fake_store, "kb_cbt_2026-08"),
+        ), patch(
+            "rag.retrieval.bm25.get_bm25_retriever",
+            return_value=bm25_mock,
+        ):
+            result = r.retrieve("CBT for depression")
+
+        assert isinstance(result, CBTEvidenceResult)
+        assert len(result.retrieved) > 0
+        _, dense_kwargs = mock_search.call_args
+        assert dense_kwargs["store"] is fake_store
+        _, bm25_kwargs = bm25_mock.search.call_args
+        assert bm25_kwargs["collection_name"] == "kb_cbt_2026-08"
+
+    @patch("clinical.retrieval.cbt_retriever._search_dense")
+    def test_retrieve_without_alias_uses_default_store(self, mock_search):
+        """When no manifest alias exists, dense search must fall back to the
+        app-default vector store and BM25 to the default collection."""
+        default_store = MagicMock()
+        r = CBTRetriever(n_results=5, similarity_threshold=0.0, enable_rerank=False)
+        mock_search.return_value = [
+            _MockQueryResult(
+                text="Behavioural activation is effective for depression.",
+                score=0.7,
+                metadata={"framework": "cbt"},
+            ),
+        ]
+        bm25_mock = MagicMock(search=MagicMock(return_value=[]))
+
+        with patch(
+            "clinical.retrieval.cbt_retriever.resolve_framework_store",
+            return_value=(default_store, None),
+        ), patch(
+            "rag.retrieval.bm25.get_bm25_retriever",
+            return_value=bm25_mock,
+        ):
+            result = r.retrieve("behavioural activation")
+
+        assert isinstance(result, CBTEvidenceResult)
+        _, dense_kwargs = mock_search.call_args
+        assert dense_kwargs["store"] is default_store
+        _, bm25_kwargs = bm25_mock.search.call_args
+        assert bm25_kwargs["collection_name"] is None
+
 
 class TestCBTRetrieverAsync:
     @pytest.mark.asyncio

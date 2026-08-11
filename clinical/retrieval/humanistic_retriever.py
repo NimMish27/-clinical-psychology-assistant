@@ -12,15 +12,18 @@ from __future__ import annotations
 
 import threading
 import time
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from app_logging.logger import get_logger
-
+from clinical.retrieval.collections import resolve_framework_store
 from clinical.retrieval.models import (
     HumanisticEvidenceFilter,
     HumanisticEvidenceItem,
     HumanisticEvidenceResult,
 )
+
+if TYPE_CHECKING:
+    from rag.vector_store import VectorStore
 
 try:
     from rag.retrieval.fusion import reciprocal_rank_fusion
@@ -104,9 +107,12 @@ class HumanisticRetriever:
         chroma_where = _build_where_from_filter(effective_filter)
         bm25_filter = _build_bm25_filter_from_filter(effective_filter)
 
+        # Resolve the framework-scoped collection (manifest.lock alias).
+        store, collection_name = resolve_framework_store(self._framework)
+
         # Dense vector search
         t_dense = time.perf_counter()
-        dense_raw = _search_dense(query, candidate_n, chroma_where)
+        dense_raw = _search_dense(query, candidate_n, chroma_where, store=store)
         dense_ms = (time.perf_counter() - t_dense) * 1000
 
         dense_candidates = _to_humanistic_items(dense_raw, self._similarity_threshold)
@@ -123,6 +129,7 @@ class HumanisticRetriever:
                 query,
                 n_results=candidate_n,
                 metadata_filter=bm25_filter,
+                collection_name=collection_name,
             )
             sparse_candidate_dicts = sparse_raw
         except Exception as exc:
@@ -259,13 +266,15 @@ def _search_dense(
     query: str,
     n_results: int,
     where: dict[str, Any] | None,
+    *,
+    store: VectorStore | None = None,
 ) -> list[Any]:
     """Embed the query and run ChromaDB similarity search."""
     from rag.embeddings import embed_text
     from rag.vector_store import get_vector_store
 
     query_vector = embed_text(query, is_query=True)
-    store = get_vector_store()
+    store = store or get_vector_store()
     return store.query_documents(
         query_vector,
         n_results=n_results,

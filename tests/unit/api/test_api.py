@@ -72,6 +72,7 @@ def client(mock_settings):
         mock_vs.get_collection_info.return_value = MagicMock(
             name="test_collection", document_count=42
         )
+        mock_vs.collection_name = "test_collection"
         mock_vs_factory.return_value = mock_vs
 
         from api.main import create_app
@@ -326,6 +327,7 @@ class TestIngestEndpoint:
 
         mock_vs = MagicMock()
         mock_vs.add_documents = MagicMock(return_value=mock_insert_result)
+        mock_vs.collection_name = "test_collection"
 
         test_client.app.dependency_overrides[get_pdf_loader_dep] = lambda: mock_loader
         test_client.app.dependency_overrides[get_chunker_dep] = lambda: mock_chunker

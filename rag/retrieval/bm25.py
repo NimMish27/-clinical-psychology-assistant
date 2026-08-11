@@ -39,6 +39,7 @@ class BM25Retriever:
         self._bm25: Any = None
         self._lock = threading.Lock()
         self._loaded = False
+        self._loaded_collection: str | None = None
         _log.info("bm25.init", k1=k1, b=b)
 
     def search(
@@ -48,6 +49,7 @@ class BM25Retriever:
         n_results: int = 10,
         metadata_filter: dict[str, Any] | None = None,
         force_reload: bool = False,
+        collection_name: str | None = None,
     ) -> list[dict[str, Any]]:
         """Run BM25 search against the corpus.
 
@@ -57,6 +59,11 @@ class BM25Retriever:
             metadata_filter:  Filter results by metadata field values.
                               Supported operators: ``$in``, ``$eq`` (exact match).
             force_reload:     Reload corpus from ChromaDB before searching.
+            collection_name:  Build the corpus from this named Chroma
+                              collection. ``None`` (default) uses the
+                              app-default collection. The corpus is rebuilt
+                              when the requested collection differs from the
+                              currently loaded one.
 
         Returns:
             List of dicts with keys ``chunk_id``, ``text``, ``score``,
@@ -65,9 +72,10 @@ class BM25Retriever:
         """
         if force_reload:
             self._loaded = False
+            self._loaded_collection = None
 
-        if not self._loaded:
-            self._load()
+        if not self._loaded or collection_name != self._loaded_collection:
+            self._load(collection_name)
 
         if not self._corpus:
             _log.warning("bm25.empty_corpus")
@@ -114,13 +122,23 @@ class BM25Retriever:
         )
         return results
 
-    def _load(self) -> None:
+    def _load(self, collection_name: str | None = None) -> None:
         with self._lock:
-            if self._loaded:
+            if self._loaded and collection_name == self._loaded_collection:
                 return
             try:
-                from rag.vector_store import get_vector_store
-                store = get_vector_store()
+                if collection_name:
+                    from config.settings import get_settings
+                    from rag.vector_store import VectorStore
+
+                    store = VectorStore(
+                        collection_name=collection_name,
+                        persist_dir=get_settings().chroma.persist_dir,
+                    )
+                else:
+                    from rag.vector_store import get_vector_store
+
+                    store = get_vector_store()
                 collection = store._resolve_collection()
                 raw = collection.get(include=["documents", "metadatas"])
             except Exception as exc:
@@ -130,6 +148,7 @@ class BM25Retriever:
                 self._metadatas = []
                 self._bm25 = None
                 self._loaded = True
+                self._loaded_collection = collection_name
                 return
 
             ids_raw = raw.get("ids") or []
@@ -144,6 +163,7 @@ class BM25Retriever:
                 _log.warning("bm25.load_empty_collection")
                 self._bm25 = None
                 self._loaded = True
+                self._loaded_collection = collection_name
                 return
 
             t_start = time.perf_counter()
@@ -156,9 +176,11 @@ class BM25Retriever:
                 self._bm25 = _SimpleBM25(tokenized_corpus, k1=self._k1, b=self._b)
             elapsed_ms = (time.perf_counter() - t_start) * 1000
             self._loaded = True
+            self._loaded_collection = collection_name
             _log.info(
                 "bm25.index_built",
                 documents=len(self._corpus),
+                collection=collection_name,
                 elapsed_ms=round(elapsed_ms, 2),
             )
 
@@ -194,13 +216,16 @@ class BM25Retriever:
         return len(self._corpus)
 
     def __repr__(self) -> str:
-        return f"BM25Retriever(k1={self._k1}, b={self._b}, loaded={self._loaded}, docs={len(self._corpus)})"
+        return (
+            f"BM25Retriever(k1={self._k1}, b={self._b}, "
+            f"loaded={self._loaded}, docs={len(self._corpus)})"
+        )
 
 
 class _SimpleBM25:
     """Minimal BM25 implementation when rank_bm25 is not installed."""
 
-    def __init__(self, corpus: list[list[str]], k1: float = 1.5, b: float = 0.75):
+    def __init__(self, corpus: list[list[str]], k1: float = 1.5, b: float = 0.75) -> None:
         self._k1 = k1
         self._b = b
         self._corpus = corpus
@@ -208,7 +233,6 @@ class _SimpleBM25:
         self._avgdl = sum(self._doc_len) / len(corpus) if corpus else 0.0
         self._nd = len(corpus)
 
-        from collections import Counter
         self._df: dict[str, int] = {}
         for doc in corpus:
             for term in set(doc):

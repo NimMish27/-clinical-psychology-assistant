@@ -22,9 +22,10 @@ from __future__ import annotations
 import asyncio
 import tempfile
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 
 from api.dependencies import (
     ChunkerDep,
@@ -55,6 +56,7 @@ def _ingest_one_file(
     chunker,
     vector_store,
     settings,
+    extra_metadata: dict,
 ) -> FileIngestResult:
     from rag.embeddings import embed_documents
 
@@ -130,11 +132,15 @@ def _ingest_one_file(
         chunks_batch = chunking.to_chromadb_batch()
         emb_batch    = embedding_result.to_chromadb_batch()
 
+        metadatas = chunks_batch["metadatas"]
+        if extra_metadata:
+            metadatas = [dict(m, **extra_metadata) for m in metadatas]
+
         insert_result = vector_store.add_documents(
             ids=chunks_batch["ids"],
             documents=chunks_batch["documents"],
             embeddings=emb_batch["embeddings"],
-            metadatas=chunks_batch["metadatas"],
+            metadatas=metadatas,
         )
     except Exception as exc:
         _log.error("ingest.store_failed", filename=filename, error=str(exc))
@@ -193,6 +199,25 @@ async def ingest(
     settings: SettingsDep,
     request_id: RequestIdDep,
     files: list[UploadFile] = File(..., description="PDF files to ingest"),
+    collection: str | None = Form(
+        None,
+        description="Target ChromaDB collection. Defaults to the app's configured collection.",
+    ),
+    user: str | None = Form(
+        None,
+        max_length=128,
+        description="Owner of the uploaded document(s)",
+    ),
+    project: str | None = Form(
+        None,
+        max_length=128,
+        description="Project the document(s) belong to",
+    ),
+    document_type: str | None = Form(
+        None,
+        max_length=64,
+        description="Document type, e.g. case-note or research",
+    ),
 ) -> IngestResponse:
     t_total = time.perf_counter()
 
@@ -202,11 +227,37 @@ async def ingest(
             detail="No files provided.",
         )
 
+    # Resolve the target collection: an explicit override targets a dedicated
+    # collection (e.g. the user's uploaded documents); otherwise the configured
+    # default vector store is used.
+    if collection and collection != settings.chroma.collection_name:
+        from rag.vector_store import VectorStore
+
+        target_store = VectorStore(
+            collection_name=collection,
+            persist_dir=settings.chroma.persist_dir,
+        )
+        _log.info(
+            "ingest.target_collection",
+            request_id=request_id,
+            collection=collection,
+        )
+    else:
+        target_store = vector_store
+
+    extra_metadata: dict[str, str] = {}
+    for key, val in (("user", user), ("project", project), ("document_type", document_type)):
+        if val:
+            extra_metadata[key] = val
+    extra_metadata["upload_date"] = datetime.now(timezone.utc).date().isoformat()
+
     _log.info(
         "ingest.request",
         request_id=request_id,
         file_count=len(files),
         filenames=[f.filename for f in files],
+        collection=target_store.collection_name,
+        metadata_keys=sorted(extra_metadata),
     )
 
     for upload in files:
@@ -264,8 +315,9 @@ async def ingest(
                 filename,
                 loader,
                 chunker,
-                vector_store,
+                target_store,
                 settings,
+                extra_metadata,
             )
             file_results.append(result)
 
@@ -301,5 +353,5 @@ async def ingest(
         total_chunks=total_chunks,
         files=file_results,
         elapsed_ms=round(elapsed_ms, 2),
-        collection=settings.chroma.collection_name,
+        collection=target_store.collection_name,
     )
