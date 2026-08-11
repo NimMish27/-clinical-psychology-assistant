@@ -10,7 +10,7 @@ pydantic-settings==2.6.1        # BaseSettings with .env support
 
 # ── LangChain Ecosystem ───────────────────────────────────────────────────────
 langchain==0.3.7
-langchain-core==0.3.19
+langchain-core==0.3.21
 langchain-community==0.3.7      # Ollama LLM + ChromaDB integrations
 langgraph==0.2.45               # stateful agent workflows
 langchain-ollama==0.2.1         # first-party Ollama integration
