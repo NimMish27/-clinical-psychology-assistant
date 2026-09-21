@@ -61,26 +61,26 @@
   /* Typography */
   --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
-  --text-xs: 0.75rem;
-  --text-sm: 0.8125rem;
-  --text-md: 0.875rem;
-  --text-base: 0.9375rem;
-  --text-lg: 1rem;
-  --text-xl: 1.125rem;
-  --text-2xl: 1.25rem;
-  --text-3xl: 1.5rem;
-  --text-4xl: 1.875rem;
+  --text-xs: 0.8125rem;
+  --text-sm: 0.875rem;
+  --text-md: 0.9375rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
 
-  /* Space — 4px grid */
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 20px;
-  --space-6: 24px;
-  --space-8: 32px;
-  --space-10: 40px;
-  --space-12: 48px;
+  /* Space — refined grid */
+  --space-1: 6px;
+  --space-2: 12px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --space-5: 32px;
+  --space-6: 40px;
+  --space-8: 48px;
+  --space-10: 64px;
+  --space-12: 80px;
 
   /* Radius */
   --radius-sm: 6px;
@@ -705,8 +705,8 @@ button {
 .panel {
   background: var(--c-surface);
   border: 1px solid var(--c-hairline);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-xs);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-sm);
   overflow: hidden;
 }
 
@@ -1538,7 +1538,7 @@ button {
 .grid-2 {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-  gap: var(--space-4);
+  gap: var(--space-8);
 }
 
 /* Case Analysis */
@@ -1737,17 +1737,20 @@ button {
 .case-hero {
   display: flex;
   align-items: center;
-  gap: var(--space-4);
+  gap: var(--space-6);
+  padding: var(--space-6) 0;
 }
 .case-hero .avatar {
-  width: 44px;
-  height: 44px;
-  font-size: var(--text-lg);
-  border-radius: var(--radius-lg);
+  width: 64px;
+  height: 64px;
+  font-size: var(--text-2xl);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
 }
 .case-hero h2 {
-  font-size: var(--text-2xl);
+  font-size: var(--text-3xl);
   font-weight: 700;
+  letter-spacing: -0.02em;
 }
 .case-hero .case-hero-sub {
   display: flex;
@@ -1774,7 +1777,7 @@ button {
 .detail-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: var(--space-4);
+  gap: var(--space-8);
 }
 .detail {
   display: flex;
@@ -1911,8 +1914,8 @@ button {
 .checklist-item {
   display: flex;
   align-items: flex-start;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-5);
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-6);
   border-bottom: 1px solid var(--c-hairline);
 }
 .checklist-item:last-child {

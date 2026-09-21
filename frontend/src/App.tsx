@@ -7,6 +7,7 @@ import { BookIcon, FolderIcon, GridIcon, LayersIcon, LibraryIcon, SettingsIcon, 
 import HomeDashboard from "./pages/HomeDashboard";
 import CaseIndexPage from "./pages/CaseIndexPage";
 import CaseWorkspacePage from "./pages/CaseWorkspacePage";
+import ChatPage from "./components/ChatPage";
 import EvidencePage from "./pages/EvidencePage";
 import FrameworksPage from "./pages/FrameworksPage";
 import FrameworkComparePage from "./pages/FrameworkComparePage";
@@ -65,7 +66,9 @@ export default function App() {
   );
 
   let page: React.ReactNode;
-  if (route.section === "cases") {
+  if (route.section === "chat") {
+    page = <ChatPage />;
+  } else if (route.section === "cases") {
     page = route.caseId ? <CaseWorkspacePage caseId={route.caseId} /> : <CaseIndexPage />;
   } else if (route.section === "evidence") {
     page = <EvidencePage />;

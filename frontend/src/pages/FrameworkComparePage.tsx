@@ -37,9 +37,10 @@ export default function FrameworkComparePage() {
     inFlight.current.add(id);
     setLoadingEv((prev) => new Set(prev).add(id));
     const data = FRAMEWORK_CARDS.find((c) => c.id === id)!;
+    const apiFw = FRAMEWORK_ID_TO_API[id];
     searchEvidence(
       `Effectiveness and core mechanisms of ${data.name} (${data.tagline})`,
-      { framework: FRAMEWORK_ID_TO_API[id], nResults: 3 },
+      apiFw ? { framework: apiFw, nResults: 3 } : { nResults: 3 },
     )
       .then((res) => {
         cacheRef.current[id] = res;
@@ -212,9 +213,8 @@ export default function FrameworkComparePage() {
           </div>
         </div>
 
-        {/* All frameworks lane */}
         {mode === "all" && (
-          <div className="mt-5 flex gap-4 overflow-x-auto pb-4">
+          <div className="mt-8 flex gap-6 overflow-x-auto pb-6 pt-2 pl-2">
             {ordered.map((c) => (
               <CompareCard
                 key={c.id}
@@ -261,8 +261,7 @@ export default function FrameworkComparePage() {
               />
             </div>
 
-            {/* Two columns */}
-            <div className="mt-5 grid gap-5 lg:grid-cols-2">
+            <div className="mt-8 grid gap-8 lg:grid-cols-2">
               <PairColumn
                 data={comparison.a}
                 comparison={comparison}
@@ -358,10 +357,10 @@ function CompareCard({
   const pct = Math.round(data.confidence * 100);
   return (
     <div
-      className={`flex w-[300px] shrink-0 flex-col rounded-2xl border bg-white/60 backdrop-blur-xl transition-all duration-300 ${
-        expanded ? "border-white/90 shadow-[0_8px_32px_-12px_rgba(15,23,42,0.2)]" : "border-white/70 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_24px_-12px_rgba(15,23,42,0.1)]"
-      } ${pinned ? "ring-1" : ""}`}
-      style={pinned ? { boxShadow: `0 0 0 1.5px ${data.color}55` } : undefined}
+      className={`flex w-[380px] shrink-0 flex-col rounded-2xl border bg-white/70 backdrop-blur-xl transition-all duration-300 ${
+        expanded ? "border-white shadow-[0_12px_40px_-12px_rgba(15,23,42,0.15)]" : "border-white/80 shadow-md"
+      } ${pinned ? "ring-2 ring-offset-1" : ""}`}
+      style={pinned ? { borderColor: data.color } : undefined}
     >
       {/* head */}
       <div className="flex items-center gap-3 p-4 pb-3">
@@ -475,9 +474,9 @@ function PairColumn({
   const focusShared = comparison.focusShared;
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-2xl border border-white/70 bg-white/60 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_24px_-12px_rgba(15,23,42,0.1)] backdrop-blur-xl">
+    <div className="flex flex-col overflow-hidden rounded-3xl border border-white/80 bg-white/70 shadow-lg backdrop-blur-xl">
       {/* head */}
-      <div className="flex items-center gap-3 p-4" style={{ borderBottom: `2px solid ${data.color}` }}>
+      <div className="flex items-center gap-4 p-5" style={{ borderBottom: `3px solid ${data.color}` }}>
         <span
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white"
           style={{ background: `linear-gradient(135deg, ${data.color}, ${data.color}cc)` }}

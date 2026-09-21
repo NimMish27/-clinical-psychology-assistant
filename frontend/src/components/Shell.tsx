@@ -12,6 +12,7 @@ import {
   GridIcon,
   LayersIcon,
   LibraryIcon,
+  MessageSquareIcon,
   SearchIcon,
   SettingsIcon,
   ShieldIcon,
@@ -19,6 +20,7 @@ import {
 } from "../ui/icons";
 
 const RAIL_ITEMS = [
+  { section: "chat", label: "Assistant Chat", icon: MessageSquareIcon },
   { section: "workspace", label: "Workspace", icon: GridIcon },
   { section: "cases", label: "Cases", icon: FolderIcon },
   { section: "evidence", label: "Evidence", icon: LibraryIcon },
@@ -50,23 +52,35 @@ export default function Shell({ children }: { children: ReactNode }) {
 function NavRail() {
   const { route, openSection } = useNav();
   return (
-    <nav className="rail" aria-label="Primary">
-      <div className="rail-brand">
-        <BrainIcon />
+    <nav className="rail bg-[#0f172a] text-stone-300 border-r border-stone-800" aria-label="Primary">
+      <div className="rail-brand bg-indigo-600 text-white shadow-lg">
+        <BrainIcon className="h-5 w-5" />
       </div>
-      {RAIL_ITEMS.map(({ section, label, icon: Icon }) => (
-        <button
-          key={section}
-          className={`rail-item ${route.section === section ? "active" : ""}`}
-          onClick={() => openSection(section)}
-          aria-label={label}
-        >
-          <Icon />
-          {section === "safety" && <span className="rail-badge">1</span>}
-          <span className="rail-tip">{label}</span>
-        </button>
-      ))}
+      {RAIL_ITEMS.map(({ section, label, icon: Icon }) => {
+        const isActive = route.section === section;
+        return (
+          <button
+            key={section}
+            className={`rail-item transition-all duration-200 ${
+              isActive
+                ? "bg-indigo-600/20 text-indigo-400 border-l-2 border-indigo-500 font-semibold"
+                : "text-stone-400 hover:bg-stone-800/60 hover:text-stone-200"
+            }`}
+            onClick={() => openSection(section)}
+            aria-label={label}
+          >
+            <Icon className="h-5 w-5" />
+            {section === "safety" && <span className="rail-badge">1</span>}
+            <span className="rail-tip">{label}</span>
+          </button>
+        );
+      })}
       <div className="rail-spacer" />
+      <div className="p-3 border-t border-stone-800/60">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-900/60 text-xs font-bold text-indigo-300 ring-1 ring-indigo-500/30">
+          DR
+        </div>
+      </div>
     </nav>
   );
 }
@@ -81,6 +95,14 @@ function SectionSidebar() {
   }
 
   const config: Record<string, { head: string; sub: string; items: Array<{ id: string; label: string; action?: () => void }> }> = {
+    chat: {
+      head: "Assistant",
+      sub: "AI Chat",
+      items: [
+        { id: "formulation", label: "Multi-Theory Chat" },
+        { id: "session", label: "New Consultation" },
+      ],
+    },
     workspace: {
       head: "Workspace",
       sub: "Today",

@@ -42,58 +42,58 @@ export default function FrameworksPage() {
 
       <div className="relative">
         {/* Header */}
-        <header className="flex flex-wrap items-end justify-between gap-4">
+        <header className="flex flex-wrap items-end justify-between gap-6 pb-8 pt-12">
           <div>
-            <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-indigo-600">
-              <LayersIcon className="h-3.5 w-3.5" /> Framework Knowledge
+            <p className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.1em] text-indigo-600">
+              <LayersIcon className="h-5 w-5" /> Framework Knowledge
             </p>
-            <h1 className="mt-1 text-2xl font-bold tracking-tight text-stone-900">Framework cards</h1>
-            <p className="mt-1 max-w-xl text-sm text-stone-500">
+            <h1 className="mt-3 text-4xl font-bold tracking-tight text-stone-900">Framework cards</h1>
+            <p className="mt-3 max-w-2xl text-lg text-stone-500">
               Evidence-graded therapeutic frameworks for case comparison — suitability, confidence,
               and the literature behind each.
             </p>
           </div>
           <button
             onClick={() => navigate({ section: "frameworks", frameworkMode: "compare" })}
-            className="inline-flex items-center gap-2 rounded-xl bg-stone-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-stone-800"
+            className="inline-flex items-center gap-2 rounded-xl bg-stone-900 px-6 py-4 text-base font-semibold text-white shadow-lg transition hover:bg-stone-800"
           >
-            <GitCompareIcon className="h-4 w-4" /> Compare frameworks
+            <GitCompareIcon className="h-5 w-5" /> Compare frameworks
           </button>
         </header>
 
         {/* Summary strip */}
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="mt-8 grid grid-cols-2 gap-6 sm:grid-cols-4">
           {[
-            { label: "Frameworks", value: String(FRAMEWORK_CARDS.length), icon: <LayersIcon className="h-4 w-4" /> },
-            { label: "Indexed in KB", value: collections === null ? "…" : String(indexedCount), icon: <DatabaseIcon className="h-4 w-4" /> },
-            { label: "Avg confidence", value: `${avgConfidence}%`, icon: <SparklesIcon className="h-4 w-4" /> },
-            { label: "Literature sources", value: String(totalSources), icon: <ShieldIcon className="h-4 w-4" /> },
+            { label: "Frameworks", value: String(FRAMEWORK_CARDS.length), icon: <LayersIcon className="h-5 w-5" /> },
+            { label: "Indexed in KB", value: collections === null ? "…" : String(indexedCount), icon: <DatabaseIcon className="h-5 w-5" /> },
+            { label: "Avg confidence", value: `${avgConfidence}%`, icon: <SparklesIcon className="h-5 w-5" /> },
+            { label: "Literature sources", value: String(totalSources), icon: <ShieldIcon className="h-5 w-5" /> },
           ].map((s) => (
             <div
               key={s.label}
-              className="flex items-center gap-3 rounded-xl border border-white/70 bg-white/60 p-3.5 backdrop-blur-xl transition-colors hover:bg-white/80"
+              className="flex items-center gap-5 rounded-2xl border border-white/80 bg-white/70 p-6 shadow-md backdrop-blur-xl transition-colors hover:bg-white/90"
             >
-              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
                 {s.icon}
               </span>
               <div>
-                <div className="text-lg font-bold tabular-nums leading-tight text-stone-800">{s.value}</div>
-                <div className="text-[11px] text-stone-400">{s.label}</div>
+                <div className="text-2xl font-bold tabular-nums leading-tight text-stone-800">{s.value}</div>
+                <div className="mt-1 text-sm text-stone-500">{s.label}</div>
               </div>
             </div>
           ))}
         </div>
 
         {/* Card grid */}
-        <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {FRAMEWORK_CARDS.map((fw) => (
             <FrameworkCard key={fw.id} data={fw} onOpen={() => openFramework(fw.id)} />
           ))}
         </div>
 
         {/* Footer note */}
-        <footer className="mt-8 flex items-center gap-2 text-[11px] text-stone-400">
-          <span className="inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+        <footer className="mt-12 pb-12 flex items-center gap-3 text-sm text-stone-500">
+          <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500" />
           Confidence reflects retrieval quality from the indexed framework knowledge base and curated
           literature — never a diagnosis.
         </footer>

@@ -100,9 +100,9 @@ function OverviewTab({ caseId }: { caseId: string }) {
     <div className="canvas" style={{ padding: 0 }}>
       <div className="grid-2">
         <Panel title="Presenting concerns">
-          <div style={{ padding: "var(--space-2) var(--space-5)" }}>
+          <div style={{ padding: "var(--space-4) 0" }}>
             {record.concerns.map((c) => (
-              <div key={c} className="list-row" style={{ paddingLeft: 0, paddingRight: 0 }}>
+              <div key={c} className="list-row" style={{ paddingLeft: "var(--space-8)", paddingRight: "var(--space-8)" }}>
                 <span className="status-dot" style={{ background: "var(--c-primary)" }} />
                 <div className="row-main">{c}</div>
               </div>
@@ -110,7 +110,7 @@ function OverviewTab({ caseId }: { caseId: string }) {
           </div>
         </Panel>
         <Panel title="Client snapshot">
-          <div className="detail-grid" style={{ padding: "var(--space-4) var(--space-5)" }}>
+          <div className="detail-grid" style={{ padding: "var(--space-8)" }}>
             <div className="detail">
               <span className="detail-label">Age / gender</span>
               <span className="detail-value">{record.age} / {record.gender}</span>
@@ -148,7 +148,7 @@ function OverviewTab({ caseId }: { caseId: string }) {
 
       <div className="grid-2">
         <Panel title="Safety summary" actions={<button className="btn btn-sm" onClick={() => openCase(record.id, "safety")}>Open safety</button>}>
-          <div style={{ padding: "var(--space-4) var(--space-5)", display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
+          <div style={{ padding: "var(--space-8)", display: "flex", flexDirection: "column", gap: "var(--space-6)" }}>
             {record.riskFlags.length > 0 ? (
               record.riskFlags.map((f, i) => (
                 <Badge key={i} tone={f.level === "high" ? "danger" : f.level === "moderate" ? "warning" : "info"} dot>
@@ -159,7 +159,7 @@ function OverviewTab({ caseId }: { caseId: string }) {
               <Badge tone="success" dot>No active risk flags</Badge>
             )}
             <div>
-              <div style={{ fontSize: "var(--text-sm)", color: "var(--c-ink-3)", marginBottom: 4 }}>
+              <div style={{ fontSize: "var(--text-sm)", color: "var(--c-ink-3)", marginBottom: 8 }}>
                 Checklist completion
               </div>
               <Meter value={total ? (done / total) * 100 : 0} />
@@ -202,12 +202,12 @@ function AssessmentTab({ caseId }: { caseId: string }) {
 
       <div className="grid-2">
         <Panel title="Intake progress">
-          <div style={{ padding: "var(--space-4) var(--space-5)" }}>
+          <div style={{ padding: "var(--space-8)" }}>
             <StepperBlock />
           </div>
         </Panel>
         <Panel title="Clinical history">
-          <div style={{ padding: "var(--space-4) var(--space-5)", fontSize: "var(--text-md)", lineHeight: 1.7, color: "var(--c-ink-2)" }}>
+          <div style={{ padding: "var(--space-8)", fontSize: "var(--text-lg)", lineHeight: 1.8, color: "var(--c-ink-2)" }}>
             {record.history}
           </div>
         </Panel>

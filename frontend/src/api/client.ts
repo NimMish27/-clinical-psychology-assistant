@@ -130,7 +130,11 @@ export interface EvidenceSearchOptions {
 
 async function parseError(res: Response): Promise<string> {
   const err = await res.json().catch(() => null);
-  return err?.detail?.[0]?.msg || err?.detail || `HTTP ${res.status}`;
+  if (!err) return `HTTP ${res.status}`;
+  if (typeof err.message === "string") return err.message;
+  if (typeof err.detail === "string") return err.detail;
+  if (Array.isArray(err.detail) && err.detail[0]?.msg) return err.detail[0].msg;
+  return `HTTP ${res.status}`;
 }
 
 export async function sendChatMessage(

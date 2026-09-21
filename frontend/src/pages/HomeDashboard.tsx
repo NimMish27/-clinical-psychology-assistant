@@ -18,9 +18,9 @@ import {
   FileTextIcon,
   FolderIcon,
   LibraryIcon,
+  MessageSquareIcon,
   PlusIcon,
   RefreshIcon,
-  SearchIcon,
   SettingsIcon,
   ShieldIcon,
   SparklesIcon,
@@ -45,13 +45,13 @@ function Card({
 }) {
   return (
     <section
-      className={`rounded-2xl border border-stone-200 bg-white shadow-[0_1px_2px_0_rgb(28_25_23/0.05)] ${className}`}
+      className={`rounded-2xl border border-stone-200/60 bg-white/80 backdrop-blur-xl shadow-md ${className}`}
     >
       {(title || action) && (
-        <header className="flex items-center justify-between gap-3 border-b border-stone-100 px-5 py-3.5">
+        <header className="flex items-center justify-between gap-4 border-b border-stone-100/80 px-6 py-4">
           <div>
-            <h2 className="text-sm font-semibold text-stone-900">{title}</h2>
-            {subtitle && <p className="text-xs text-stone-400 mt-0.5">{subtitle}</p>}
+            <h2 className="text-base font-semibold text-stone-900">{title}</h2>
+            {subtitle && <p className="text-sm text-stone-500 mt-1">{subtitle}</p>}
           </div>
           {action}
         </header>
@@ -166,7 +166,7 @@ export default function HomeDashboard() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-5 py-7 md:px-8">
+    <div className="mx-auto max-w-[90rem] px-8 py-10 md:px-12">
       {/* Header */}
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
@@ -182,16 +182,16 @@ export default function HomeDashboard() {
         </div>
         <div className="flex items-center gap-2">
           <button
+            onClick={() => openSection("chat")}
+            className="inline-flex h-9 items-center gap-2 rounded-lg bg-indigo-600 px-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
+          >
+            <MessageSquareIcon className="h-4 w-4" /> Start AI Multi-Theory Chat
+          </button>
+          <button
             onClick={toCasesIndex}
             className="inline-flex h-9 items-center gap-2 rounded-lg border border-stone-200 bg-white px-3.5 text-sm font-medium text-stone-700 transition hover:bg-stone-50"
           >
             <FolderIcon className="h-4 w-4" /> All cases
-          </button>
-          <button
-            onClick={() => openSection("evidence")}
-            className="inline-flex h-9 items-center gap-2 rounded-lg bg-indigo-600 px-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
-          >
-            <SearchIcon className="h-4 w-4" /> Search literature
           </button>
         </div>
       </header>
@@ -217,7 +217,7 @@ export default function HomeDashboard() {
           ))}
         </div>
 
-        <div className="grid gap-6 p-5 md:grid-cols-5">
+        <div className="grid gap-8 p-6 md:grid-cols-5 md:p-8">
           {/* Left: intake action */}
           <div className="md:col-span-3">
             {intakeMode === "upload" ? (
@@ -307,7 +307,7 @@ export default function HomeDashboard() {
       </Card>
 
       {/* Recent Cases + Quick Actions */}
-      <div className="mt-6 grid gap-6 lg:grid-cols-12">
+      <div className="mt-8 grid gap-8 lg:grid-cols-12">
         <Card
           className="lg:col-span-8"
           title="Recent Cases"
@@ -326,7 +326,7 @@ export default function HomeDashboard() {
                 <li key={c.id}>
                   <button
                     onClick={() => openCase(c.id, "overview")}
-                    className="group flex w-full items-center gap-3.5 px-5 py-3.5 text-left transition hover:bg-stone-50/70"
+                    className="group flex w-full items-center gap-4 px-6 py-4 text-left transition hover:bg-stone-50/70"
                   >
                     <span
                       className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-xs font-bold text-white"
@@ -395,7 +395,7 @@ export default function HomeDashboard() {
       </div>
 
       {/* KB Status + Framework Stats + Recent Sessions */}
-      <div className="mt-6 grid gap-6 lg:grid-cols-12">
+      <div className="mt-8 grid gap-8 lg:grid-cols-12">
         {/* Knowledge Base Status */}
         <Card
           className="lg:col-span-5"

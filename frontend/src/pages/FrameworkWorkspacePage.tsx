@@ -102,32 +102,32 @@ export default function FrameworkWorkspacePage({ frameworkId }: { frameworkId: s
         </button>
 
         {/* Header */}
-        <header className="mt-4 overflow-hidden rounded-2xl border border-white/70 bg-white/60 p-5 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_10px_30px_-12px_rgba(15,23,42,0.12)] backdrop-blur-xl sm:p-6">
-          <div className="flex flex-wrap items-center gap-4">
+        <header className="mt-8 overflow-hidden rounded-3xl border border-white/80 bg-white/70 p-8 shadow-[0_20px_60px_-15px_rgba(15,23,42,0.15)] backdrop-blur-2xl sm:p-12">
+          <div className="flex flex-wrap items-center gap-8">
             <span
-              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-white shadow-lg"
+              className="flex h-24 w-24 shrink-0 items-center justify-center rounded-[2rem] text-white shadow-2xl"
               style={{
                 background: `linear-gradient(135deg, ${data.color}, ${data.color}cc)`,
-                boxShadow: `0 10px 24px -10px ${data.color}b3`,
+                boxShadow: `0 20px 40px -10px ${data.color}b3`,
               }}
             >
-              <FrameworkGlyph id={data.id} className="h-7 w-7" />
+              <FrameworkGlyph id={data.id} className="h-12 w-12" />
             </span>
             <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-xl font-bold tracking-tight text-stone-900">{data.name}</h1>
+              <div className="flex flex-wrap items-center gap-3">
+                <h1 className="text-4xl font-bold tracking-tight text-stone-900">{data.name}</h1>
                 {data.featured && (
                   <span
-                    className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white"
+                    className="rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-white"
                     style={{ background: data.color }}
                   >
                     Core
                   </span>
                 )}
               </div>
-              <p className="text-sm text-stone-400">{data.tagline}</p>
+              <p className="mt-3 text-lg text-stone-500">{data.tagline}</p>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-4">
               <HeaderChip label="Confidence" value={`${Math.round(data.confidence * 100)}%`} color={data.color} />
               <HeaderChip label="Sources" value={`${data.evidenceCount}`} />
               <HeaderChip
@@ -139,15 +139,15 @@ export default function FrameworkWorkspacePage({ frameworkId }: { frameworkId: s
         </header>
 
         {/* Tabs */}
-        <nav className="sticky top-0 z-20 mt-5 flex gap-1 rounded-xl border border-white/70 bg-white/70 p-1 shadow-sm backdrop-blur-xl">
+        <nav className="sticky top-0 z-20 mt-8 flex gap-2 rounded-2xl border border-white/80 bg-white/80 p-2 shadow-md backdrop-blur-xl">
           {TABS.map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ${
+              className={`flex-1 rounded-xl px-4 py-3 text-base font-semibold transition-all duration-300 ${
                 tab === t.id
-                  ? "bg-white text-stone-900 shadow-sm ring-1 ring-stone-200/70"
-                  : "text-stone-500 hover:bg-white/60 hover:text-stone-700"
+                  ? "bg-white text-stone-900 shadow-md ring-1 ring-stone-200"
+                  : "text-stone-500 hover:bg-white/70 hover:text-stone-800"
               }`}
             >
               {t.label}
@@ -157,7 +157,7 @@ export default function FrameworkWorkspacePage({ frameworkId }: { frameworkId: s
 
         {/* Tab content */}
         {tab === "conceptualization" && (
-          <div className="mt-5 flex flex-col gap-5">
+          <div className="mt-10 flex flex-col gap-10 pb-20">
             <SectionCard title="Case Conceptualization" icon={<BookIcon className="h-4 w-4" />}>
               <p className="text-sm leading-relaxed text-stone-600">{w.conceptualization}</p>
               <div className="mt-4 rounded-lg bg-white/60 p-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-stone-400 ring-1 ring-stone-200/60">
@@ -178,11 +178,11 @@ export default function FrameworkWorkspacePage({ frameworkId }: { frameworkId: s
               </div>
             </SectionCard>
 
-            <SectionCard title="Therapeutic Focus" icon={<SparklesIcon className="h-4 w-4" />}>
-              <p className="text-sm leading-relaxed text-stone-600">{w.therapeuticFocus}</p>
+            <SectionCard title="Therapeutic Focus" icon={<SparklesIcon className="h-5 w-5" />}>
+              <p className="text-base leading-relaxed text-stone-600">{w.therapeuticFocus}</p>
             </SectionCard>
 
-            <div className="grid gap-5 lg:grid-cols-2">
+            <div className="grid gap-10 lg:grid-cols-2">
               <SectionCard title="Strengths" icon={<CheckIcon className="h-4 w-4" />}>
                 <ul className="flex flex-col gap-2.5">
                   {w.strengths.map((s) => (
@@ -210,7 +210,7 @@ export default function FrameworkWorkspacePage({ frameworkId }: { frameworkId: s
         {tab === "evidence" && <EvidenceTab dataName={data.name} query={evQuery} setQuery={setEvQuery} onRun={() => void run()} loading={evLoading} error={evError} result={evResult} color={data.color} kbLabel={apiFramework ? `${apiFramework} knowledge base` : "general clinical knowledge base"} />}
 
         {tab === "plan" && (
-          <div className="mt-5 flex flex-col gap-5">
+          <div className="mt-10 flex flex-col gap-10 pb-20">
             <SectionCard title="Suggested Interventions" icon={<SparklesIcon className="h-4 w-4" />}>
               <div className="grid gap-3 sm:grid-cols-3">
                 {w.suggestedInterventions.map((iv) => (
@@ -281,7 +281,7 @@ export default function FrameworkWorkspacePage({ frameworkId }: { frameworkId: s
         )}
 
         {tab === "assessment" && (
-          <div className="mt-5 flex flex-col gap-5">
+          <div className="mt-10 flex flex-col gap-10 pb-20">
             <SectionCard title="Assessment Questions" icon={<ShieldIcon className="h-4 w-4" />}>
               <p className="mb-4 text-xs text-stone-400">
                 Collaborative prompts to open dialogue and refine the formulation under this framework.
@@ -311,9 +311,9 @@ export default function FrameworkWorkspacePage({ frameworkId }: { frameworkId: s
 
 function HeaderChip({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
-    <div className="flex items-center gap-2 rounded-xl bg-white/70 px-3 py-2 ring-1 ring-stone-200/60">
-      <span className="text-[11px] text-stone-400">{label}</span>
-      <span className="text-xs font-bold text-stone-700" style={color ? { color } : undefined}>
+    <div className="flex items-center gap-3 rounded-2xl bg-white/70 px-5 py-3 ring-1 ring-stone-200/60">
+      <span className="text-sm text-stone-500">{label}</span>
+      <span className="text-lg font-bold text-stone-800" style={color ? { color } : undefined}>
         {value}
       </span>
     </div>
@@ -330,9 +330,9 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-white/70 bg-white/60 p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_24px_-12px_rgba(15,23,42,0.1)] backdrop-blur-xl">
-      <h2 className="mb-3.5 flex items-center gap-2 text-sm font-semibold text-stone-800">
-        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+    <section className="rounded-[2rem] border border-white/80 bg-white/60 p-8 shadow-[0_10px_30px_-15px_rgba(15,23,42,0.1)] backdrop-blur-xl sm:p-10">
+      <h2 className="mb-6 flex items-center gap-3 text-xl font-bold text-stone-800">
+        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 shadow-sm">
           {icon}
         </span>
         {title}
@@ -379,7 +379,7 @@ function EvidenceTab({
   const sources = result?.sources ?? [];
 
   return (
-    <div className="mt-5 flex flex-col gap-5">
+    <div className="mt-10 flex flex-col gap-10 pb-20">
       <SectionCard title="Evidence" icon={<SearchIcon className="h-4 w-4" />}>
         <div className="flex flex-col gap-3 sm:flex-row">
           <div className="flex flex-1 items-center gap-2 rounded-xl bg-white/80 px-3.5 py-2.5 ring-1 ring-stone-200/70 focus-within:ring-2">

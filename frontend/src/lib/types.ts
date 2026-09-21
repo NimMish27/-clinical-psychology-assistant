@@ -2,6 +2,7 @@ import type { Framework } from "../api/client";
 
 export type Section =
   | "workspace"
+  | "chat"
   | "cases"
   | "evidence"
   | "frameworks"

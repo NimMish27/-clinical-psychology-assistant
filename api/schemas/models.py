@@ -86,8 +86,8 @@ class ChatRequest(BaseModel):
     query: str = Field(
         ...,
         min_length=3,
-        max_length=2000,
-        description="Clinical question to answer",
+        max_length=50000,
+        description="Clinical question or detailed case study to analyze",
         examples=["What are the DSM-5 diagnostic criteria for Major Depressive Disorder?"],
     )
     session_id: str | None = Field(
@@ -420,7 +420,7 @@ class EvidenceSearchRequest(BaseModel):
     query: str = Field(
         ...,
         min_length=3,
-        max_length=2000,
+        max_length=50000,
         description="Natural-language literature search query",
         examples=["Acceptance and values work for chronic pain"],
     )
