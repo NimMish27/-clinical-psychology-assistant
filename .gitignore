@@ -55,3 +55,11 @@ Thumbs.db
 # Model cache (sentence-transformers downloads here)
 .cache/
 huggingface/
+
+# Knowledge base — raw PDFs (confidential source material, not for VCS)
+knowledge/sources/**/raw/
+knowledge/**/raw/
+
+# Knowledge base — derived artifacts (rebuildable from curated sources)
+knowledge/built/
+knowledge/index/

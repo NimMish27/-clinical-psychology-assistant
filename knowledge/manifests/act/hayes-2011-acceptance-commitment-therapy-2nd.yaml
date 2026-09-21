@@ -1,0 +1,103 @@
+# knowledge/manifests/act/hayes-2011-acceptance-commitment-therapy-2nd.yaml
+#
+# Worked example: book manifest for the ACT literature collection.
+# One manifest per book+edition. This is the authoritative record the ingest
+# pipeline reads to build chunks and the Chroma collection kb_act_<index_version>.
+
+manifest_version: 1
+framework: act
+
+# ── Book identity ─────────────────────────────────────────────────────────
+book_slug: hayes-2011-acceptance-commitment-therapy-2nd
+book_title: "Acceptance and Commitment Therapy: The Process and Practice of Mindful Change"
+authors:
+  - Hayes, S. C.
+  - Strosahl, K. D.
+  - Wilson, K. G.
+edition: 2
+publication_year: 2011
+publisher: The Guilford Press
+isbn: "978-1-60918-962-4"
+language: en
+
+# Version lineage: this edition supersedes the 1st edition (1999).
+supersedes: hayes-1999-acceptance-commitment-therapy
+supersedes_reason: Second edition updates the ACT model around the hexaflex and process-based therapy.
+
+# ── Index / build control ─────────────────────────────────────────────────
+index_version: "2026-08"
+active: true                      # false → excluded from retrieval metadata gate
+source_commit: ""                 # filled by CI: git SHA that produced this manifest
+source_hash: ""                   # filled at build time
+
+# ── Citations (must resolve in knowledge/citations/bibliography.bib) ──────
+citation_ids:
+  - bib:hayes2011
+  - bib:hayes2006
+  - bib:luoma2017
+
+# ── Book-level tags (merged into every chunk's metadata) ──────────────────
+book_tags:
+  topics: [psychological-flexibility, experiential-avoidance, cognitive-fusion]
+  interventions: [defusion, acceptance, values-clarification, committed-action-planning]
+  populations: [adults, chronic-pain]
+
+# ── Chapter manifest ──────────────────────────────────────────────────────
+# Each chapter maps 1:1 to a curated source file in
+# sources/act/hayes-2011-acceptance-commitment-therapy-2nd/.
+# chapter.slug is used for the deterministic chunk_id and the synthetic
+# ancestry prefix: "Hayes, Strosahl & Wilson (2011) > Ch. 5 > Creative Hopelessness".
+chapters:
+  - number: 1
+    slug: act-model-overview
+    title: The ACT Model
+  - number: 2
+    slug: foundations-relational-frame-theory
+    title: Foundations — Relational Frame Theory and the Development of the Model
+  - number: 3
+    slug: psychological-flexibility-model
+    title: The Six Core Processes of Psychological Flexibility
+  - number: 4
+    slug: creating-therapeutic-relationship
+    title: Creating a Therapeutic Relationship
+  - number: 5
+    slug: creative-hopelessness
+    title: Creative Hopelessness
+  - number: 6
+    slug: acceptance-willingness
+    title: Acceptance and Willingness
+  - number: 7
+    slug: cognitive-defusion
+    title: Cognitive Defusion
+  - number: 8
+    slug: present-moment-awareness
+    title: Contact with the Present Moment
+  - number: 9
+    slug: self-as-context
+    title: Self-as-Context
+  - number: 10
+    slug: values
+    title: Values
+  - number: 11
+    slug: committed-action
+    title: Committed Action
+  - number: 12
+    slug: case-conceptualization
+    title: Case Conceptualization in ACT
+  - number: 13
+    slug: session-structure
+    title: Structuring and Sequencing ACT Sessions
+  - number: 14
+    slug: research-base
+    title: The Research Base and Dissemination
+
+# ── Per-chapter curation notes (optional; informs chunker + reviewer) ─────
+curation_notes:
+  - chapter: 3
+    note: "Hexaflex diagram lives here; table of six processes should be a
+           'table' content_type chunk so it is never split."
+  - chapter: 7
+    note: "Contains boxed defusion exercises (leaves on a stream, passengers on
+           the bus) — each boxed-exercise becomes its own child chunk."
+  - chapter: 10
+    note: "Values card-sort exercise → boxed-exercise; rest is prose."

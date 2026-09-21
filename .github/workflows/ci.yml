@@ -1,0 +1,66 @@
+name: CI
+
+"on":
+  push:
+    branches: [main, "feature/*"]
+  pull_request:
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Install ruff
+        run: pip install ruff==0.7.4
+      - name: Ruff check (knowledge pipeline + touched retrieval files)
+        run: |
+          ruff check \
+            knowledge_pipeline/ \
+            scripts/build_knowledge_base.py \
+            clinical/retrieval/collections.py \
+            rag/retrieval/bm25.py
+
+  kb-validate:
+    name: Knowledge base validation gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Install minimal build deps
+        run: pip install pyyaml tiktoken pydantic pydantic-settings python-dotenv structlog loguru
+      - name: Build (schema + manifest + citation validation, then chunk)
+        run: python scripts/build_knowledge_base.py build
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Cache embedding model
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/huggingface
+          key: hf-model-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            hf-model-
+      - name: Install dependencies
+        run: pip install -r requirements.txt pytest pytest-asyncio
+      - name: Run test suite
+        run: python -m pytest -o addopts=""

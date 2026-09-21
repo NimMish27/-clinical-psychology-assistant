@@ -755,6 +755,52 @@ class VectorStore:
         )
         return self.delete_documents(where={"source": source})
 
+    def list_sources(self) -> list[dict[str, Any]]:
+        """
+        Aggregate the distinct source documents stored in the collection.
+
+        Useful for admin/documents endpoints that need to list what has been
+        uploaded. Returns one entry per distinct ``source`` metadata value,
+        with a chunk count and the first-seen tagging metadata
+        (``user``, ``project``, ``document_type``, ``upload_date``).
+
+        Returns:
+            List of dicts, each with ``source``, ``chunks``, ``user``,
+            ``project``, ``document_type`` and ``upload_date`` keys. Sorted
+            case-insensitively by source. Empty list when the collection has
+            no documents.
+        """
+        collection = self._resolve_collection()
+        if collection.count() == 0:
+            return []
+
+        raw = collection.get(include=["metadatas"])
+        metadatas = raw.get("metadatas") or []
+
+        _TAG_FIELDS = ("user", "project", "document_type", "upload_date")
+        sources: dict[str, dict[str, Any]] = {}
+        for meta in metadatas:
+            source = meta.get("source") or "unknown"
+            entry = sources.setdefault(
+                source,
+                {
+                    "source": source,
+                    "chunks": 0,
+                    **{tag_field: None for tag_field in _TAG_FIELDS},
+                },
+            )
+            entry["chunks"] += 1
+            for tag_field in _TAG_FIELDS:
+                if entry.get(tag_field) is None and meta.get(tag_field):
+                    entry[tag_field] = meta[tag_field]
+
+        _log.info(
+            "vectorstore.list_sources",
+            collection=self._collection_name,
+            sources=len(sources),
+        )
+        return sorted(sources.values(), key=lambda s: s["source"].lower())
+
     # ── Collection info and management ───────────────────────────────────────
 
     def get_collection_info(self) -> CollectionInfo:

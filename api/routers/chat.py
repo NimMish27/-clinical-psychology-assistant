@@ -20,7 +20,9 @@ from __future__ import annotations
 
 import asyncio
 import time
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import TYPE_CHECKING
+
+from fastapi import APIRouter, HTTPException, status
 
 from api.dependencies import (
     RequestIdDep,
@@ -29,6 +31,17 @@ from api.dependencies import (
 )
 from api.schemas.models import ChatRequest, ChatResponse, SourceReference
 from app_logging.logger import get_logger
+
+if TYPE_CHECKING:
+    from clinical.retrieval.act_retriever import (
+        ACTEvidenceResult,
+        ACTRetriever,
+    )
+    from clinical.retrieval.cbt_retriever import CBTRetriever
+    from clinical.retrieval.humanistic_retriever import HumanisticRetriever
+    from clinical.retrieval.models import CBTEvidenceResult, HumanisticEvidenceResult
+    from config.settings import Settings
+    from rag.retriever import RetrievalResult, RetrievedChunk
 
 _log = get_logger(__name__)
 
@@ -99,6 +112,158 @@ def _call_llm(prompt: str, settings) -> str:
     return llm.invoke(full_prompt)
 
 
+# ── Framework-scoped retrieval + user-documents merge ────────────────────────
+
+_USER_DOCUMENTS_COLLECTION = "user_documents"
+
+
+def _get_framework_retriever(
+    framework: str,
+) -> ACTRetriever | CBTRetriever | HumanisticRetriever:
+    """
+    Return the process-wide retriever for a curated clinical framework.
+
+    Imported lazily so the chat router stays light and the framework
+    retrieval modules (which import the heavy embedding stack on demand)
+    are only loaded when a framework is actually requested.
+    """
+    from clinical.retrieval import (
+        get_act_retriever,
+        get_cbt_retriever,
+        get_humanistic_retriever,
+    )
+
+    factories = {
+        "cbt": get_cbt_retriever,
+        "act": get_act_retriever,
+        "humanistic": get_humanistic_retriever,
+    }
+    return factories[framework]()
+
+
+def _framework_result_to_retrieval_result(
+    result: ACTEvidenceResult | CBTEvidenceResult | HumanisticEvidenceResult,
+    query: str,
+    n_results: int,
+) -> RetrievalResult:
+    """
+    Adapt a framework evidence result (CBT/ACT/Humanistic) to the generic
+    ``RetrievalResult`` shape consumed by the chat response assembly.
+    """
+    from rag.retriever import RetrievalResult, RetrievedChunk
+
+    chunks = [
+        RetrievedChunk(
+            text=item.content,
+            source=item.source,
+            page=item.page,
+            score=item.quality_rating or 0.0,
+            chunk_id=item.chunk_id,
+            rank=rank,
+            metadata={
+                "framework": getattr(item, "framework", None),
+                "chapter": getattr(item, "chapter", None),
+                "topic": getattr(item, "topic", None),
+            },
+        )
+        for rank, item in enumerate(result.retrieved, start=1)
+    ]
+    return RetrievalResult(
+        query=query,
+        chunks=chunks,
+        total_candidates=result.total_candidates,
+        threshold_used=0.0,
+        n_results_requested=n_results,
+        elapsed_ms=result.elapsed_ms,
+        embedding_ms=0.0,
+        search_ms=result.elapsed_ms,
+    )
+
+
+def _retrieve_user_documents(
+    query: str,
+    settings: Settings,
+    n_results: int,
+    collection: str = _USER_DOCUMENTS_COLLECTION,
+) -> list[RetrievedChunk]:
+    """
+    Dense-only retrieval against the user's uploaded-documents collection.
+
+    Runs in a thread executor from the request handler so the async event
+    loop is never blocked by embedding or vector search. Returns an empty
+    list when the collection does not exist (no documents uploaded yet).
+    """
+    from rag.embeddings import embed_text
+    from rag.retriever import RetrievedChunk
+    from rag.vector_store import VectorStore
+
+    store = VectorStore(
+        collection_name=collection,
+        persist_dir=settings.chroma.persist_dir,
+    )
+    if not store.collection_exists():
+        _log.warning("chat.user_collection_missing", collection=collection)
+        return []
+
+    query_vector = embed_text(query, is_query=True)
+    results = store.query_documents(query_vector=query_vector, n_results=n_results)
+    return [
+        RetrievedChunk(
+            text=r.text,
+            source=r.source,
+            page=r.page,
+            score=r.score,
+            chunk_id=r.chunk_id,
+            rank=r.rank,
+            metadata=r.metadata,
+        )
+        for r in results
+    ]
+
+
+def _merge_chunks(
+    primary: RetrievalResult,
+    extra_chunks: list[RetrievedChunk],
+    n_results: int,
+) -> RetrievalResult:
+    """
+    Merge curated + user-document chunks, dedupe by chunk_id, re-rank by
+    descending score, and truncate to ``n_results``.
+    """
+    from rag.retriever import RetrievalResult, RetrievedChunk
+
+    seen: dict[str, RetrievedChunk] = {}
+    for chunk in list(primary.chunks) + list(extra_chunks):
+        key = chunk.chunk_id or f"{chunk.source}:{chunk.page}:{chunk.rank}"
+        existing = seen.get(key)
+        if existing is None or chunk.score > existing.score:
+            seen[key] = chunk
+
+    sorted_chunks = sorted(seen.values(), key=lambda c: c.score, reverse=True)[:n_results]
+    merged = [
+        RetrievedChunk(
+            text=c.text,
+            source=c.source,
+            page=c.page,
+            score=c.score,
+            chunk_id=c.chunk_id,
+            rank=rank,
+            metadata=c.metadata,
+        )
+        for rank, c in enumerate(sorted_chunks, start=1)
+    ]
+    return RetrievalResult(
+        query=primary.query,
+        chunks=merged,
+        total_candidates=primary.total_candidates + len(extra_chunks),
+        threshold_used=primary.threshold_used,
+        n_results_requested=n_results,
+        elapsed_ms=primary.elapsed_ms,
+        embedding_ms=primary.embedding_ms,
+        search_ms=primary.search_ms,
+    )
+
+
 @router.post(
     "",
     response_model=ChatResponse,
@@ -130,18 +295,57 @@ async def chat(
         session_id=body.session_id,
         n_sources=body.n_sources,
         source_filter=body.source_filter,
+        framework=body.framework,
+        include_user_documents=body.include_user_documents,
     )
 
     # ── 1. Retrieve relevant chunks ───────────────────────────────────────────
     t_retrieval = time.perf_counter()
     try:
-        page_range_tuple = tuple(body.page_range) if body.page_range else None
-        retrieval_result = await retriever.aretrieve(
-            body.query,
-            n_results=body.n_sources,
-            source_filter=body.source_filter,
-            page_range=page_range_tuple,
-        )
+        if body.framework is not None:
+            framework_retriever = _get_framework_retriever(body.framework)
+            framework_result = await framework_retriever.retrieve_async(body.query)
+            retrieval_result = _framework_result_to_retrieval_result(
+                framework_result,
+                body.query,
+                body.n_sources,
+            )
+        else:
+            page_range_tuple = tuple(body.page_range) if body.page_range else None
+            retrieval_result = await retriever.aretrieve(
+                body.query,
+                n_results=body.n_sources,
+                source_filter=body.source_filter,
+                page_range=page_range_tuple,
+            )
+
+        # Merge the user's uploaded documents when requested.
+        if body.include_user_documents:
+            try:
+                user_chunks = await asyncio.to_thread(
+                    _retrieve_user_documents,
+                    body.query,
+                    settings,
+                    body.n_sources,
+                )
+            except Exception as exc:
+                _log.warning(
+                    "chat.user_documents_failed",
+                    request_id=request_id,
+                    error=str(exc),
+                )
+                user_chunks = []
+            if user_chunks:
+                retrieval_result = _merge_chunks(
+                    retrieval_result,
+                    user_chunks,
+                    body.n_sources,
+                )
+                _log.info(
+                    "chat.user_documents_merged",
+                    request_id=request_id,
+                    merged_chunks=len(retrieval_result.chunks),
+                )
     except Exception as exc:
         _log.error("chat.retrieval_failed", request_id=request_id, error=str(exc))
         raise HTTPException(
